@@ -11,11 +11,12 @@ class Event:
     A simple class that handles a list of functions that can
     all be called by raising the event. Handlers are added and
     removed using the following notation respectively:
-    event += func
-    event -= func
+    event += func OR event.bind(func)
+    event -= func OR event.unbind(func)
     When the event is raised, all the arguments passed are passed
     straight to the functions that are called. 
     """
+    
     def __init__(self):
         self._event_funcs = {}
 
@@ -38,7 +39,7 @@ class Event:
         return self
     
     def __isub__(self, func):
-        
+        self.unbind(func)
         return self
     
     def fire(self, *args, **kwargs):

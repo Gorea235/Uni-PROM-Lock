@@ -26,6 +26,13 @@ class Timeout(object):
         """
         self.__timer.cancel()
 
+    def restart(self):
+        """
+        Resets and starts the timeout.
+        """
+        self.reset()
+        self.start()
+
     def cleanup(self):
         """
         Cleans up class.

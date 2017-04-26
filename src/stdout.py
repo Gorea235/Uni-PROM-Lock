@@ -30,21 +30,24 @@ class StdoutOverwrite:
         """
         if self.__overwrite_enabled:
             self.__clear_line()
-            self.__old_stdout.write(s)
+            self.__owrite(s)
             self.__dsp_overwrite_line()
         else:
-            self.__old_stdout.write(s)
+            self.__owrite(s)
     
     def flush(self):
         self.__old_stdout.flush()
+
+    def __owrite(self, s):
+        self.__old_stdout.write(s)
     
     def __clear_line(self):
-        self.__old_stdout.write("\r" + (" " * 40) + "\r")
+        self.__owrite("\r" + (" " * 40) + "\r")
         self.flush()
     
     def __dsp_overwrite_line(self):
         self.__clear_line()
-        self.__old_stdout.write(self.overwrite_text)
+        self.__owrite(self.overwrite_text)
         self.flush()
 
     def start_overwrite_output(self):
@@ -53,7 +56,7 @@ class StdoutOverwrite:
         """
         if self.__overwrite_enabled:
             return
-        self.__old_stdout.write("\n")
+        self.__owrite("\n")
         self.flush()
         self.__overwrite_enabled = True
     
@@ -63,7 +66,7 @@ class StdoutOverwrite:
         """
         if not self.__overwrite_enabled:
             return
-        self.__old_stdout.write("\n")
+        self.__owrite("\n")
         self.__overwrite_enabled = False
     
     def cleanup(self):
@@ -117,3 +120,8 @@ if __name__ == "__main__":
     time.sleep(wait)
     out.end_overwrite_output()
     out.cleanup()
+
+##for i in range(10):
+##    sys.stdout.write("\r" + "{}".format(i)*i)
+##    sys.stdout.flush()
+##    time.sleep(0.5)

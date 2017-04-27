@@ -10,6 +10,7 @@ class StdoutOverwrite:
         sys.stdout = self
         self.__overwrite_enabled = False
         self.__overwrite_text = ""
+        self.__second_pass = False
 
     @property
     def overwrite_text(self):
@@ -29,9 +30,14 @@ class StdoutOverwrite:
         Writes a line to stdout.
         """
         if self.__overwrite_enabled:
-            self.__clear_line()
-            self.__owrite(s)
-            self.__dsp_overwrite_line()
+            if not self.__second_pass:
+                self.__clear_line()
+                self.__owrite(s)
+                self.__second_pass = True
+            else:
+                self.__owrite(s)
+                self.__dsp_overwrite_line()
+                self.__second_pass = False
         else:
             self.__owrite(s)
     
@@ -43,7 +49,6 @@ class StdoutOverwrite:
     
     def __clear_line(self):
         self.__owrite("\r" + (" " * 40) + "\r")
-        self.flush()
     
     def __dsp_overwrite_line(self):
         self.__clear_line()
@@ -56,9 +61,9 @@ class StdoutOverwrite:
         """
         if self.__overwrite_enabled:
             return
-        self.__owrite("\n")
         self.flush()
         self.__overwrite_enabled = True
+        self.__overwrite_text = ""
     
     def end_overwrite_output(self):
         """
@@ -70,6 +75,7 @@ class StdoutOverwrite:
         self.__overwrite_enabled = False
     
     def cleanup(self):
+        self.end_overwrite_output()
         sys.stdout = self.__old_stdout
 
 if __name__ == "__main__":

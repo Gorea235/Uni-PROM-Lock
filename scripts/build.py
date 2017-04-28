@@ -5,7 +5,7 @@ import shutil
 _TOP = ".."
 SRC = os.path.join(_TOP, "src")
 LIB = os.path.join(_TOP, "lib")
-BIN = os.path.join(_TOP, "bin")
+BUILD = os.path.join(_TOP, "build")
 
 def copy_contents(frm, to):
     for f in os.listdir(frm):
@@ -13,13 +13,13 @@ def copy_contents(frm, to):
         shutil.copyfile(os.path.join(frm, f), os.path.join(to, f))
 
 if __name__ == "__main__":
-    if not os.path.isdir(BIN):
+    if not os.path.isdir(BUILD):
         print("Generating bin folder")
-        os.mkdir(BIN)
+        os.mkdir(BUILD)
     else:
         print("Clearing bin folder")
-        for f in os.listdir(BIN):
-            os.remove(os.path.join(BIN, f))
+        for f in os.listdir(BUILD):
+            os.remove(os.path.join(BUILD, f))
 
-    copy_contents(SRC, BIN)
-    copy_contents(LIB, BIN)
+    copy_contents(SRC, BUILD)
+    copy_contents(LIB, BUILD)

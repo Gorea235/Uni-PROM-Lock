@@ -2,6 +2,7 @@
 import threading
 import event
 
+
 class Timeout(object):
     """
     The timeout class used to raise an event when the given time has elapsed.

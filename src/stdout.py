@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 import sys
 
+
 class StdoutOverwrite:
     """
     The standard output for the system. The write method will replace the sys.stdout.write method, but still use it.
@@ -19,13 +20,13 @@ class StdoutOverwrite:
         Sets/gets the current output of the written line.
         """
         return self.__overwrite_text
-    
+
     @overwrite_text.setter
     def overwrite_text(self, value):
         assert isinstance(value, str)
         self.__overwrite_text = value
         self.__dsp_overwrite_line()
-    
+
     def write(self, s):
         """
         Writes a line to stdout.
@@ -41,16 +42,16 @@ class StdoutOverwrite:
                 self.__second_pass = False
         else:
             self.__owrite(s)
-    
+
     def flush(self):
         self.__old_stdout.flush()
 
     def __owrite(self, s):
         self.__old_stdout.write(s)
-    
+
     def __clear_line(self):
         self.__owrite("\r" + (" " * 40) + "\r")
-    
+
     def __dsp_overwrite_line(self):
         self.__clear_line()
         self.__owrite(self.overwrite_text)
@@ -65,7 +66,7 @@ class StdoutOverwrite:
         self.flush()
         self.__overwrite_enabled = True
         self.__overwrite_text = ""
-    
+
     def end_overwrite_output(self):
         """
         Stops the overwritten output and returns the printed lines to a reasonable state.
@@ -74,10 +75,11 @@ class StdoutOverwrite:
             return
         self.__owrite("\n")
         self.__overwrite_enabled = False
-    
+
     def cleanup(self):
         self.end_overwrite_output()
         sys.stdout = self.__old_stdout
+
 
 if __name__ == "__main__":
     import time
@@ -128,7 +130,7 @@ if __name__ == "__main__":
     out.end_overwrite_output()
     out.cleanup()
 
-##for i in range(10):
+# for i in range(10):
 ##    sys.stdout.write("\r" + "{}".format(i)*i)
-##    sys.stdout.flush()
-##    time.sleep(0.5)
+# sys.stdout.flush()
+# time.sleep(0.5)

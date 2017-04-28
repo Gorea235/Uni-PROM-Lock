@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
-from timeout import *
-import os
 import datetime
+import os
+from timeout import *
 
 PWORD_FILE = "password.txt"
 ACCESS_LOG_FILE = "access_log.csv"
@@ -10,42 +10,48 @@ IMMEDIATE_REJECT = False
 LOCKED_OUT_TIME = 60
 # if the following values are different, then the lock will only allow attempts
 # between the times
-TIME_LOCKOUT_BEGIN = (13, 0) # hour, minute
-TIME_LOCKOUT_END = (14, 0) # hour, minute
+TIME_LOCKOUT_BEGIN = (13, 0)  # hour, minute
+TIME_LOCKOUT_END = (14, 0)  # hour, minute
 
-class CodeLock(object):
 
-    def __init__(self, iface, logger, stdout):
-        self.iface = iface # store interface wrapper
-        self.logger = logger # store logger
-        self.stdout = stdout # store standard output
+class CodeLock:
+    def __init__(self, iface, logger, stdout, main):
+        self.iface = iface  # store interface wrapper
+        self.logger = logger  # store logger
+        self.stdout = stdout  # store standard output
 
-        self.iface.digit_received.bind(self.digit_received_handler) # bind to digit recevied event
-        self.digit_timeout = Timeout(3) # the digit timeout
+        # bind to digit recevied event
+        self.iface.digit_received.bind(self.digit_received_handler)
+        self.digit_timeout = Timeout(3)  # the digit timeout
+        main.wrap(self.digit_timeout)
 
-        self.password = [] # password store
-        if os.path.isfile(PWORD_FILE): # file exists, read and use
+        self.password = []  # password store
+        if os.path.isfile(PWORD_FILE):  # file exists, read and use
             with open(PWORD_FILE) as f:
-                self.password = f.read().strip().split() # reads and cleans up
+                self.password = f.read().strip().split()  # reads and cleans up
             self.logger.log("password read as {}", self.password)
         else:
-            self.password = DEFAULT_PWORD.split() # use default password
+            self.password = DEFAULT_PWORD.split()  # use default password
             self.logger.log("password defaulted to {}", self.password)
             with open(PWORD_FILE, "w") as f:
-                f.write("".join(self.password)) # write new password.txt
+                f.write("".join(self.password))  # write new password.txt
             self.logger.log("wrote new password file to {}", PWORD_FILE)
-        
+
         self.access_log = open(ACCESS_LOG_FILE, "a")
         self.access_log_append("startup", None)
-        
-        self.current_input = [] # current digit input
-        self.locked_out = False # whether the user is locked out
-        self.locked_timeout = Timeout(1) # the locked out timeout (supposed to go from 59-0, but should output each second)
-        self.incorrect_attempts = 0 # the number of incorrect attempts
-        self.locked_time_left = 0 # the amount of time left for the user to be locked out
-    
+
+        self.current_input = []  # current digit input
+        self.locked_out = False  # whether the user is locked out
+        # the locked out timeout (supposed to go from 59-0, but should output
+        # each second)
+        self.locked_timeout = Timeout(1)
+        main.wrap(self.locked_timeout)
+        self.incorrect_attempts = 0  # the number of incorrect attempts
+        self.locked_time_left = 0  # the amount of time left for the user to be locked out
+
     def access_log_append(self, event_name, success):
-        self.access_log.write("{},{:yyyy-MM-ddTHH:mm:ss},{}".format(event_name, datetime.datetime.now(), success))
+        self.access_log.write(
+            "{},{:yyyy-MM-ddTHH:mm:ss},{}".format(event_name, datetime.datetime.now(), success))
 
     def password_entered(self, correct, count_attempt=True):
         """
@@ -61,7 +67,8 @@ class CodeLock(object):
             if count_attempt:
                 self.incorrect_attempts += 1
             self.iface.flash_red_led()
-            self.logger.log("password incorrect, attempts: {}, LED pulsed".format(self.incorrect_attempts))
+            self.logger.log("password incorrect, attempts: {}, LED pulsed".format(
+                self.incorrect_attempts))
 
     def lockout(self):
         """
@@ -72,13 +79,14 @@ class CodeLock(object):
         self.locked_time_left = LOCKED_OUT_TIME
         self.locked_timeout.start()
         self.logger.log("user locked out, beginning countdown")
-    
+
     def locked_timeout_elapsed(self):
         """
         Handles the elapsed event of the lockout timeout.
         """
         self.locked_time_left -= 1
-        self.logger.logd("locked out time left: {}".format(self.locked_time_left))
+        self.logger.logd(
+            "locked out time left: {}".format(self.locked_time_left))
         self.stdout.overwrite_text = str(self.locked_time_left)
         if self.locked_time_left <= 0:
             self.locked_out = False
@@ -97,10 +105,10 @@ class CodeLock(object):
             return
         if TIME_LOCKOUT_BEGIN != TIME_LOCKOUT_END:
             now = datetime.datetime.now()
-            if not ((now.hour > TIME_LOCKOUT_BEGIN[0] or 
-                    (now.hour == TIME_LOCKOUT_BEGIN[0] and now.minute >= TIME_LOCKOUT_BEGIN[1])) and
-                    (now.hour < TIME_LOCKOUT_END[0] or 
-                    (now.hour == TIME_LOCKOUT_END[0] and now.minute <= TIME_LOCKOUT_END[1]))):
+            if not ((now.hour > TIME_LOCKOUT_BEGIN[0] or
+                     (now.hour == TIME_LOCKOUT_BEGIN[0] and now.minute >= TIME_LOCKOUT_BEGIN[1])) and
+                    (now.hour < TIME_LOCKOUT_END[0] or
+                     (now.hour == TIME_LOCKOUT_END[0] and now.minute <= TIME_LOCKOUT_END[1]))):
                 self.logger.log("time lockout out of bounds, ignoring digit")
                 return
         self.iface.beep_buzzer()

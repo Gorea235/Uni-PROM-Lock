@@ -1,4 +1,3 @@
-#! /usr/bin/env python3
 from timeout import *
 import os
 import datetime

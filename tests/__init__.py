@@ -10,9 +10,17 @@ def test_source():
     sys.path.append("../src")
     sys.path.append("../lib")
 
+    gpio_available = None
+    try:
+        import RPi.GPIO as gpio
+        gpio_available = True
+    except ImportError:
+        gpio_available = False
+
     from . import test_code_lock
-    # from . import test_gpio_wrapper
-    # from . import test_interface_wrapper
+    if gpio_available:
+        from . import test_gpio_wrapper
+        from . import test_interface_wrapper
     from . import test_logger
     from . import test_stdout
 
@@ -22,8 +30,9 @@ def test_source():
 
     # load tests from modules to suite
     suite.addTests(loader.loadTestsFromModule(test_code_lock))
-    # suite.addTests(loader.loadTestsFromModule(test_gpio_wrapper))
-    # suite.addTests(loader.loadTestsFromModule(test_interface_wrapper))
+    if gpio_available:
+        suite.addTests(loader.loadTestsFromModule(test_gpio_wrapper))
+        suite.addTests(loader.loadTestsFromModule(test_interface_wrapper))
     suite.addTests(loader.loadTestsFromModule(test_logger))
     suite.addTests(loader.loadTestsFromModule(test_stdout))
 

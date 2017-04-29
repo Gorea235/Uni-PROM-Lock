@@ -3,11 +3,35 @@ import RPi.GPIO as gpio
 from event import Event
 from gpio_wrapper import GpioWrapper
 
+# GPIO States
+GPIO_S_HIGH = "1"
+GPIO_S_LOW = "0"
+
+# GPIO lines
 LINE_REG_CLK = 14
 LINE_IO_SWTICH = 15
 LINE_DATA_0 = 11
 LINE_DATA_1 = 9
 LINE_DATA_2 = 10
+
+# 8-Bit ad-hoc digits
+DPOS_DIGIT = [0, 1, 2, 3]
+DPOS_NDIGITS = len(DPOS_DIGIT)
+DPOS_GREEN_LED = 4
+DPOS_RED_LED = 5
+DPOS_BUZZER = 6
+# Unused digit position = 7
+
+DPOS_MAX = 7
+
+# Digit conversion matrix
+# Works with [row][column]
+DIGIT_CONVERT = [
+    ["1", "2", "3"],
+    ["4", "5", "6"],
+    ["7", "8", "9"],
+    ["*", "0", "#"],
+]
 
 
 class GpioLines:
@@ -34,6 +58,9 @@ class GpioLines:
     def io(self):
         return self.__lines["io"]
 
+    def d(self, index):
+        return self.__lines[self.__digit_lines[index]]
+
     @property
     def d0(self):
         return self.__lines["d0"]
@@ -54,6 +81,22 @@ class GpioLines:
         for d in self.__digit_lines:
             self.__lines[d].input()
 
+    def d_states(self):
+        return [self.__lines[d].state() for d in self.__digit_lines]
+
+    def d_all_high(self):
+        high = True
+        for s in self.d_states():
+            high = high and s
+        return high
+
+    def d_all_low(self):
+        return not self.d_all_high()
+
+    def d_set_states(self, states):
+        digits = [(self.__lines[self.__digit_lines[i]], states[i]) for i in range(len(self.__digit_lines))]
+        GpioWrapper.set_multiple_output(*digits)
+
 
 class InterfaceWrapper:
     """
@@ -68,6 +111,8 @@ class InterfaceWrapper:
         self.digit_received = Event()
         """The digit received event, fired when the class detects that a digit has been pressed"""
         self.__run_loop = True
+        self.__current_digit = 0
+        self.__digit_down = False
         # the follow store the value to apply to the given output on the next
         # pass
         self.__led_green_apply = False
@@ -80,7 +125,10 @@ class InterfaceWrapper:
         """
         try:
             while self.__run_loop:
-                pass
+                # write phase
+                self.__do_write_phase()
+                # read phase
+                self.__do_read_phase()
         except Exception as ex:
             self.logger.loge(ex)
         except KeyboardInterrupt:
@@ -95,6 +143,23 @@ class InterfaceWrapper:
         # self.logger.logd("io line high")
         # self.logger.logd("gpio lines configured to read")
 
+    def __do_read_phase(self):
+        self.__start_read()
+        if self.__digit_down:
+            if self.gpio.d_all_high():
+                self.__digit_down = False
+            else:
+                states = self.gpio.d_states()
+                active = None
+                for s in range(len(states)):
+                    if states[s]:
+                        active = s
+                        break
+                if active is not None:
+                    self.__digit_down = True
+                    self.digit_received.fire(
+                        DIGIT_CONVERT[self.__current_digit][s])
+
     def __start_write(self):
         self.gpio.io.low()
         # self.logger.logd("io line low")
@@ -103,6 +168,25 @@ class InterfaceWrapper:
         self.gpio.reg.high()
         # self.logger.logd("register line high")
         # self.logger.logd("gpio lines configured to write")
+
+    def __do_write_phase(self):
+        self.__start_write()
+        low_line = None
+        if self.__led_green_apply:
+            low_line = DPOS_GREEN_LED
+            self.__led_green_apply = False
+        elif self.__led_red_apply:
+            low_line = DPOS_RED_LED
+            self.__led_red_apply = False
+        elif self.__buzzer_apply:
+            low_line = DPOS_BUZZER
+            self.__buzzer_apply = False
+        else:  # apply keypad input
+            low_line = DPOS_DIGIT[self.__current_digit]
+            self.__current_digit += 1
+            self.__current_digit %= DPOS_NDIGITS
+        bin_out = bin(low_line)[2:]
+        self.gpio.d_set_states([bool(int(d)) for d in bin_out])
 
     def cleanup(self):
         """

@@ -33,9 +33,6 @@ DIGIT_CONVERT = [
     ["*", "0", "#"],
 ]
 
-# Whether the looped code should log
-LOG_LOOP = False
-
 
 class GpioLines:
     """
@@ -111,13 +108,6 @@ class InterfaceWrapper:
         self.__led_red_apply = False
         self.__buzzer_apply = False
 
-    def llog(self, line, *args):
-        """
-        Will only log at level debug if constant is True.
-        """
-        if LOG_LOOP:
-            self.logger.logd(line, args)
-
     def main_loop(self):
         """
         Starts up the main loop of the interface, loop is wrapped in an exception handler that can handle both ‘Exception’ and ‘KeyboardInterrupt’.
@@ -135,22 +125,22 @@ class InterfaceWrapper:
 
     def __start_read(self):
         self.gpio.reg.low()
-        self.llog("register line low")
+        self.logger.logt("register line low")
         self.gpio.d_input()
-        self.llog("data lines set to input")
+        self.logger.logt("data lines set to input")
         self.gpio.io.high()
-        self.llog("io line high")
-        self.llog("gpio lines configured to read")
+        self.logger.logt("io line high")
+        self.logger.logt("gpio lines configured to read")
 
     def __do_read_phase(self):
         self.__start_read()
         if self.__digit_down:
             if self.gpio.d_all_high():
                 self.__digit_down = False
-                self.llog("digit no longer pressed, waiting for next input")
+                self.logger.logt("digit no longer pressed, waiting for next input")
             else:
                 states = self.gpio.d_states()
-                self.llog("state readings: {}", states)
+                self.logger.logt("state readings: {}", states)
                 active = None
                 for s in range(len(states)):
                     if states[s]:
@@ -159,17 +149,17 @@ class InterfaceWrapper:
                 if active is not None:
                     self.__digit_down = True
                     dgt = DIGIT_CONVERT[self.__current_digit][s]
-                    self.llog("converted digit: {}", dgt)
+                    self.logger.logt("converted digit: {}", dgt)
                     self.digit_received.fire(dgt)
 
     def __start_write(self):
         self.gpio.io.low()
-        self.llog("io line low")
+        self.logger.logt("io line low")
         self.gpio.d_output()
-        self.llog("data lines set to output")
+        self.logger.logt("data lines set to output")
         self.gpio.reg.high()
-        self.llog("register line high")
-        self.llog("gpio lines configured to write")
+        self.logger.logt("register line high")
+        self.logger.logt("gpio lines configured to write")
 
     def __do_write_phase(self):
         self.__start_write()
@@ -177,22 +167,22 @@ class InterfaceWrapper:
         if self.__led_green_apply:
             low_line = DPOS_GREEN_LED
             self.__led_green_apply = False
-            self.llog("low line set to green LED")
+            self.logger.logt("low line set to green LED")
         elif self.__led_red_apply:
             low_line = DPOS_RED_LED
             self.__led_red_apply = False
-            self.llog("low line set to red LED")
+            self.logger.logt("low line set to red LED")
         elif self.__buzzer_apply:
             low_line = DPOS_BUZZER
             self.__buzzer_apply = False
-            self.llog("low line set to buzzer")
+            self.logger.logt("low line set to buzzer")
         else:  # apply keypad input
             low_line = DPOS_DIGIT[self.__current_digit]
             self.__current_digit += 1
             self.__current_digit %= DPOS_NDIGITS
-            self.llog("low line set to next keypad row")
+            self.logger.logt("low line set to next keypad row")
         bin_out = bin(low_line)[2:]
-        self.llog("gpio states: {}", bin_out)
+        self.logger.logt("gpio states: {}", bin_out)
         self.gpio.d_set_states([bool(int(d)) for d in bin_out])
 
     def cleanup(self):

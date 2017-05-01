@@ -1,6 +1,8 @@
 #! /usr/bin/env python3
 import datetime
 
+TRACE = 4
+""""The trace tracing level"""
 DEBUG = 3
 """The debug trace level"""
 INFO = 2
@@ -9,7 +11,8 @@ WARNING = 1
 """The warning trace level"""
 ERROR = 0
 """The error trace level"""
-__trace_names = {
+_trace_names = {
+    TRACE: "TRCE",
     DEBUG: "DBUG",
     INFO: "INFO",
     WARNING: "WARN",
@@ -40,11 +43,11 @@ class Logger:
 
     def __init__(self, log_path):
         self.__trace_lvl = INFO
-        self.__log_fmt = "[{0}][{1:yyyy-MM-dd}][{1:HH:mm:ss] {2}"
+        self.__log_fmt = "[{0}][{1:%Y-%m-%d}][{1:%H:%M:%S}] {2}"
         self.__out_file = open(log_path, mode='a')
 
     def __check_level(self, required):
-        if required >= self.trace_level:
+        if required <= self.trace_level:
             return True
         return False
 
@@ -55,21 +58,24 @@ class Logger:
         if len(args) == 0:
             to_write = line
         else:
-            to_write = line.format(args)
+            to_write = line.format(*args)
         self.__out_file.write(self.log_format.format(
-            __trace_names[level], datetime.datetime.now(), to_write) + "\n")
+            _trace_names[level], datetime.datetime.now(), to_write) + "\n")
+    
+    def logt(self, line, *args):
+        self.__write_log(TRACE, line, *args)
 
     def logd(self, line, *args):
-        self.__write_log(DEBUG, line, args)
+        self.__write_log(DEBUG, line, *args)
 
     def log(self, line, *args):
-        self.__write_log(INFO, line, args)
+        self.__write_log(INFO, line, *args)
 
     def logw(self, line, *args):
-        self.__write_log(WARNING, line, args)
+        self.__write_log(WARNING, line, *args)
 
     def loge(self, exception, msg="An exception occured, please talk to developer"):
-        self.__write_log(ERROR, "{1}\n{2}", msg, exception)
+        self.__write_log(ERROR, "{0}\n{1}", msg, exception)
 
-    def cleanup(self, parameter_list):
+    def cleanup(self):
         self.__out_file.close()

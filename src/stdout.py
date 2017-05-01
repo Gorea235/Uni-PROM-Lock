@@ -8,77 +8,77 @@ class StdoutOverwrite:
     """
 
     def __init__(self):
-        self.__old_stdout = sys.stdout
+        self._old_stdout = sys.stdout
         sys.stdout = self
-        self.__overwrite_enabled = False
-        self.__overwrite_text = ""
-        self.__second_pass = False
+        self._overwrite_enabled = False
+        self._overwrite_text = ""
+        self._second_pass = False
 
     @property
     def overwrite_text(self):
         """
         Sets/gets the current output of the written line.
         """
-        return self.__overwrite_text
+        return self._overwrite_text
 
     @overwrite_text.setter
     def overwrite_text(self, value):
         assert isinstance(value, str)
-        self.__overwrite_text = value
-        self.__dsp_overwrite_line()
+        self._overwrite_text = value
+        self._dsp_overwrite_line()
 
     def write(self, s):
         """
         Writes a line to stdout.
         """
-        if self.__overwrite_enabled:
-            if not self.__second_pass:
-                self.__clear_line()
-                self.__owrite(s)
-                self.__second_pass = True
+        if self._overwrite_enabled:
+            if not self._second_pass:
+                self._clear_line()
+                self._owrite(s)
+                self._second_pass = True
             else:
-                self.__owrite(s)
-                self.__dsp_overwrite_line()
-                self.__second_pass = False
+                self._owrite(s)
+                self._dsp_overwrite_line()
+                self._second_pass = False
         else:
-            self.__owrite(s)
+            self._owrite(s)
 
     def flush(self):
-        self.__old_stdout.flush()
+        self._old_stdout.flush()
 
-    def __owrite(self, s):
-        self.__old_stdout.write(s)
+    def _owrite(self, s):
+        self._old_stdout.write(s)
 
-    def __clear_line(self):
-        self.__owrite("\r" + (" " * 40) + "\r")
+    def _clear_line(self):
+        self._owrite("\r" + (" " * 40) + "\r")
 
-    def __dsp_overwrite_line(self):
-        self.__clear_line()
-        self.__owrite(self.overwrite_text)
+    def _dsp_overwrite_line(self):
+        self._clear_line()
+        self._owrite(self.overwrite_text)
         self.flush()
 
     def start_overwrite_output(self):
         """
         Starts an overwritten output that will be replaced on each write instead of appended to.
         """
-        if self.__overwrite_enabled:
+        if self._overwrite_enabled:
             return
         self.flush()
-        self.__overwrite_enabled = True
-        self.__overwrite_text = ""
+        self._overwrite_enabled = True
+        self._overwrite_text = ""
 
     def end_overwrite_output(self):
         """
         Stops the overwritten output and returns the printed lines to a reasonable state.
         """
-        if not self.__overwrite_enabled:
+        if not self._overwrite_enabled:
             return
-        self.__owrite("\n")
-        self.__overwrite_enabled = False
+        self._owrite("\n")
+        self._overwrite_enabled = False
 
     def cleanup(self):
         self.end_overwrite_output()
-        sys.stdout = self.__old_stdout
+        sys.stdout = self._old_stdout
 
 
 if __name__ == "__main__":

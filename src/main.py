@@ -13,7 +13,7 @@ class App:
         """
         Main entry point of application
         """
-        self.__cleanup_event = Event()
+        self._cleanup_event = Event()
         self.stdout = StdoutOverwrite()
         self.logger = Logger(LOG_FILE)
         self.iface = InterfaceWrapper(self.logger, self)
@@ -22,11 +22,11 @@ class App:
 
         self.iface.main_loop()  # this cannot except unless logger causes an issue
 
-        self.__cleanup_event.fire()
+        self._cleanup_event.fire()
 
     def wrap(self, *args):
         for c in args:
-            self.__cleanup_event.bind(c.cleanup)
+            self._cleanup_event.bind(c.cleanup)
 
 
 if __name__ == "__main__":

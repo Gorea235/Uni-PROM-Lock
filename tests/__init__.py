@@ -29,6 +29,7 @@ def test_source():
         from . import test_gpio_wrapper
         from . import test_interface_wrapper
     from . import test_logger
+    from . import test_timeout
 
     # init testing
     loader = unittest.TestLoader()
@@ -40,6 +41,7 @@ def test_source():
         suite.addTests(loader.loadTestsFromModule(test_gpio_wrapper))
         suite.addTests(loader.loadTestsFromModule(test_interface_wrapper))
     suite.addTests(loader.loadTestsFromModule(test_logger))
+    suite.addTests(loader.loadTestsFromModule(test_timeout))
 
     # init runner and begin testing
     runner = unittest.TextTestRunner()

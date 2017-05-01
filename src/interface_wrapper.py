@@ -41,36 +41,36 @@ class GpioLines:
     """
 
     def __init__(self):
-        self.__lines = {
+        self._lines = {
             "reg": GpioWrapper(LINE_REG_CLK),
             "io": GpioWrapper(LINE_IO_SWTICH),
             "d0": GpioWrapper(LINE_DATA_0),
             "d1": GpioWrapper(LINE_DATA_1),
             "d2": GpioWrapper(LINE_DATA_2)
         }
-        self.__digit_lines = ["d0", "d1", "d2"]
+        self._digit_lines = ["d0", "d1", "d2"]
 
     @property
     def reg(self):
-        return self.__lines["reg"]
+        return self._lines["reg"]
 
     @property
     def io(self):
-        return self.__lines["io"]
+        return self._lines["io"]
 
     def d(self, index):
-        return self.__lines[self.__digit_lines[index]]
+        return self._lines[self._digit_lines[index]]
 
     def d_output(self):
-        for d in self.__digit_lines:
-            self.__lines[d].output()
+        for d in self._digit_lines:
+            self._lines[d].output()
 
     def d_input(self):
-        for d in self.__digit_lines:
-            self.__lines[d].input()
+        for d in self._digit_lines:
+            self._lines[d].input()
 
     def d_states(self):
-        return [self.__lines[d].state() for d in self.__digit_lines]
+        return [self._lines[d].state() for d in self._digit_lines]
 
     def d_all_high(self):
         high = True
@@ -82,8 +82,8 @@ class GpioLines:
         return not self.d_all_high()
 
     def d_set_states(self, states):
-        digits = [(self.__lines[self.__digit_lines[i]], states[i])
-                  for i in range(len(self.__digit_lines))]
+        digits = [(self._lines[self._digit_lines[i]], states[i])
+                  for i in range(len(self._digit_lines))]
         GpioWrapper.set_multiple_output(*digits)
 
 
@@ -99,31 +99,31 @@ class InterfaceWrapper:
         self.gpio = GpioLines()
         self.digit_received = Event()
         """The digit received event, fired when the class detects that a digit has been pressed"""
-        self.__run_loop = True
-        self.__current_digit = 0
-        self.__digit_down = False
+        self._run_loop = True
+        self._current_digit = 0
+        self._digit_down = False
         # the follow store the value to apply to the given output on the next
         # pass
-        self.__led_green_apply = False
-        self.__led_red_apply = False
-        self.__buzzer_apply = False
+        self._led_green_apply = False
+        self._led_red_apply = False
+        self._buzzer_apply = False
 
     def main_loop(self):
         """
         Starts up the main loop of the interface, loop is wrapped in an exception handler that can handle both ‘Exception’ and ‘KeyboardInterrupt’.
         """
         try:
-            while self.__run_loop:
+            while self._run_loop:
                 # write phase
-                self.__do_write_phase()
+                self._do_write_phase()
                 # read phase
-                self.__do_read_phase()
+                self._do_read_phase()
         except Exception as ex:
             self.logger.loge(ex)
         except KeyboardInterrupt:
             self.logger.log("Code lock shutting down")
 
-    def __start_read(self):
+    def _start_read(self):
         self.gpio.reg.low()
         self.logger.logt("register line low")
         self.gpio.d_input()
@@ -132,11 +132,11 @@ class InterfaceWrapper:
         self.logger.logt("io line high")
         self.logger.logt("gpio lines configured to read")
 
-    def __do_read_phase(self):
-        self.__start_read()
-        if self.__digit_down:
+    def _do_read_phase(self):
+        self._start_read()
+        if self._digit_down:
             if self.gpio.d_all_high():
-                self.__digit_down = False
+                self._digit_down = False
                 self.logger.logt("digit no longer pressed, waiting for next input")
             else:
                 states = self.gpio.d_states()
@@ -147,12 +147,12 @@ class InterfaceWrapper:
                         active = s
                         break
                 if active is not None:
-                    self.__digit_down = True
-                    dgt = DIGIT_CONVERT[self.__current_digit][s]
+                    self._digit_down = True
+                    dgt = DIGIT_CONVERT[self._current_digit][s]
                     self.logger.logt("converted digit: {}", dgt)
                     self.digit_received.fire(dgt)
 
-    def __start_write(self):
+    def _start_write(self):
         self.gpio.io.low()
         self.logger.logt("io line low")
         self.gpio.d_output()
@@ -161,25 +161,25 @@ class InterfaceWrapper:
         self.logger.logt("register line high")
         self.logger.logt("gpio lines configured to write")
 
-    def __do_write_phase(self):
-        self.__start_write()
+    def _do_write_phase(self):
+        self._start_write()
         low_line = None
-        if self.__led_green_apply:
+        if self._led_green_apply:
             low_line = DPOS_GREEN_LED
-            self.__led_green_apply = False
+            self._led_green_apply = False
             self.logger.logt("low line set to green LED")
-        elif self.__led_red_apply:
+        elif self._led_red_apply:
             low_line = DPOS_RED_LED
-            self.__led_red_apply = False
+            self._led_red_apply = False
             self.logger.logt("low line set to red LED")
-        elif self.__buzzer_apply:
+        elif self._buzzer_apply:
             low_line = DPOS_BUZZER
-            self.__buzzer_apply = False
+            self._buzzer_apply = False
             self.logger.logt("low line set to buzzer")
         else:  # apply keypad input
-            low_line = DPOS_DIGIT[self.__current_digit]
-            self.__current_digit += 1
-            self.__current_digit %= DPOS_NDIGITS
+            low_line = DPOS_DIGIT[self._current_digit]
+            self._current_digit += 1
+            self._current_digit %= DPOS_NDIGITS
             self.logger.logt("low line set to next keypad row")
         bin_out = bin(low_line)[2:]
         self.logger.logt("gpio states: {}", bin_out)
@@ -190,26 +190,26 @@ class InterfaceWrapper:
         Cleans up any variables before exit.
         """
         self.logger.log("cleaning up interface usage")
-        self.__run_loop = False
+        self._run_loop = False
         gpio.cleanup()
 
     def flash_green_led(self):
         """
         Causes the green LED to flash once (if mid-flash, it will either do nothing or just reset the duration left on the flash, depending on how the hardware works).
         """
-        self.__led_green_apply = True
+        self._led_green_apply = True
         self.logger.log("green LED set to flash on next pass")
 
     def flash_red_led(self):
         """
         Causes the red LED to flash once (if mid-flash, it will either do nothing or just reset the duration left on the flash, depending on how the hardware works).
         """
-        self.__led_red_apply = True
+        self._led_red_apply = True
         self.logger.log("red LED set to flash on next pass")
 
     def beep_buzzer(self):
         """
         Causes the buzzer to go off once (if it is already buzzing, it will either do nothing or just reset the duration left on the buzz, depending on how the hardware works).
         """
-        self.__buzzer_apply = True
+        self._buzzer_apply = True
         self.logger.log("buzzer set to activate on next pass")

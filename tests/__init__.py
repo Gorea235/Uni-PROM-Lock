@@ -1,10 +1,17 @@
 #! /usr/bin/env
 __all__ = ["test_source"]
 
+TMP_DIR = "tmp"
+
 
 def test_source():
     # begin imports
     import unittest
+    import os
+
+    if not os.path.isdir(TMP_DIR):
+        os.mkdir(TMP_DIR)
+    os.chdir("tmp/")
 
     import sys
     sys.path.append("../src")
@@ -22,7 +29,6 @@ def test_source():
         from . import test_gpio_wrapper
         from . import test_interface_wrapper
     from . import test_logger
-    from . import test_stdout
 
     # init testing
     loader = unittest.TestLoader()
@@ -34,8 +40,10 @@ def test_source():
         suite.addTests(loader.loadTestsFromModule(test_gpio_wrapper))
         suite.addTests(loader.loadTestsFromModule(test_interface_wrapper))
     suite.addTests(loader.loadTestsFromModule(test_logger))
-    suite.addTests(loader.loadTestsFromModule(test_stdout))
 
     # init runner and begin testing
     runner = unittest.TextTestRunner()
-    return runner.run(suite)
+    result = runner.run(suite)
+
+    os.chdir("..")
+    return result

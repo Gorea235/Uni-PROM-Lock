@@ -11,7 +11,11 @@ def test_source():
 
     if not os.path.isdir(TMP_DIR):
         os.mkdir(TMP_DIR)
-    os.chdir("tmp/")
+    os.chdir(TMP_DIR + "/")
+    for f in os.listdir(TMP_DIR):
+        ff = os.path.join(TMP_DIR, f)
+        if os.path.isfile(ff):
+            os.remove(ff)
 
     import sys
     sys.path.append("../src")

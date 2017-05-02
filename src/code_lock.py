@@ -10,8 +10,9 @@ IMMEDIATE_REJECT = False
 LOCKED_OUT_TIME = 60
 # if the following values are different, then the lock will only allow attempts
 # between the times
-TIME_LOCKOUT_BEGIN = (13, 0)  # hour, minute
-TIME_LOCKOUT_END = (14, 0)  # hour, minute
+TIME_LOCKOUT_BEGIN = datetime.time(13, 0)  # hour, minute
+TIME_LOCKOUT_END = datetime.time(14, 0)  # hour, minute
+MAX_ATTEMPTS = 5
 
 
 class CodeLock:
@@ -51,7 +52,7 @@ class CodeLock:
 
     def access_log_append(self, event_name, success):
         self.access_log.write(
-            "{},{:yyyy-MM-ddTHH:mm:ss},{}".format(event_name, datetime.datetime.now(), success))
+            "{},{:%Y-%m-%dT%H:%M:%S},{}".format(event_name, datetime.datetime.now(), success))
 
     def password_entered(self, correct, count_attempt=True):
         """
@@ -67,6 +68,8 @@ class CodeLock:
             if count_attempt:
                 self.incorrect_attempts += 1
             self.iface.flash_red_led()
+            if self.incorrect_attempts == MAX_ATTEMPTS:
+                self.lockout()
             self.logger.log("password incorrect, attempts: {}, LED pulsed".format(
                 self.incorrect_attempts))
 
@@ -104,15 +107,13 @@ class CodeLock:
             self.logger.log("locked out, ignoring digit")
             return
         if TIME_LOCKOUT_BEGIN != TIME_LOCKOUT_END:
-            now = datetime.datetime.now()
-            if not ((now.hour > TIME_LOCKOUT_BEGIN[0] or
-                     (now.hour == TIME_LOCKOUT_BEGIN[0] and now.minute >= TIME_LOCKOUT_BEGIN[1])) and
-                    (now.hour < TIME_LOCKOUT_END[0] or
-                     (now.hour == TIME_LOCKOUT_END[0] and now.minute <= TIME_LOCKOUT_END[1]))):
+            now = datetime.datetime.now().time()
+            if not (TIME_LOCKOUT_BEGIN <= now <= TIME_LOCKOUT_END):
                 self.logger.log("time lockout out of bounds, ignoring digit")
                 return
         self.iface.beep_buzzer()
         _i = len(self.current_input)
+        self.stdout.overwrite_text = ("*" * len(self.current_input)) + digit
         self.current_input.append(digit)
         self.digit_timeout.restart()
         if len(self.password) == len(self.current_input):
@@ -120,7 +121,7 @@ class CodeLock:
                 if self.password[i] != self.current_input[i]:
                     self.password_entered(False)
                     return
-            self.password_entered(False)
+            self.password_entered(True)
         elif IMMEDIATE_REJECT:
             if self.password[_i] != self.current_input[_i]:
                 self.password_entered(False)
@@ -130,6 +131,7 @@ class CodeLock:
         Handles the elapsed event of the digit timeout.
         """
         self.password_entered(False, False)
+        self.stdout.overwrite_text = ""
 
     def cleanup(self):
         """

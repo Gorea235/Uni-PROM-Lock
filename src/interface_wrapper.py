@@ -115,8 +115,10 @@ class InterfaceWrapper:
         try:
             while self._run_loop:
                 # write phase
+                self._start_write()
                 self._do_write_phase()
                 # read phase
+                self._start_read()
                 self._do_read_phase()
         except Exception as ex:
             self.logger.loge(ex)
@@ -133,24 +135,23 @@ class InterfaceWrapper:
         self.logger.logt("gpio lines configured to read")
 
     def _do_read_phase(self):
-        self._start_read()
         if self._digit_down:
             if self.gpio.d_all_high():
                 self._digit_down = False
                 self.logger.logt("digit no longer pressed, waiting for next input")
-            else:
-                states = self.gpio.d_states()
-                self.logger.logt("state readings: {}", states)
-                active = None
-                for s in range(len(states)):
-                    if states[s]:
-                        active = s
-                        break
-                if active is not None:
-                    self._digit_down = True
-                    dgt = DIGIT_CONVERT[self._current_digit][s]
-                    self.logger.logt("converted digit: {}", dgt)
-                    self.digit_received.fire(dgt)
+        else:
+            states = self.gpio.d_states()
+            self.logger.logt("state readings: {}", states)
+            active = None
+            for s in range(len(states)):
+                if states[s]:
+                    active = s
+                    break
+            if active is not None:
+                self._digit_down = True
+                dgt = DIGIT_CONVERT[self._current_digit][s]
+                self.logger.logt("converted digit: {}", dgt)
+                self.digit_received.fire(dgt)
 
     def _start_write(self):
         self.gpio.io.low()
@@ -162,7 +163,6 @@ class InterfaceWrapper:
         self.logger.logt("gpio lines configured to write")
 
     def _do_write_phase(self):
-        self._start_write()
         low_line = None
         if self._led_green_apply:
             low_line = DPOS_GREEN_LED

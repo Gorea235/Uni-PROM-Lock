@@ -16,8 +16,8 @@ class App:
         self._cleanup_event = Event()
         self.stdout = StdoutOverwrite()
         self.logger = Logger(LOG_FILE)
-        self.iface = InterfaceWrapper(self.logger, self)
-        self.internal = CodeLock(self.iface, self.logger, self.stdout, self)
+        self.iface = InterfaceWrapper(self.logger)
+        self.internal = CodeLock(self.iface, self.logger, self.stdout)
         self.wrap(self.stdout, self.logger, self.iface, self.internal)
 
         self.iface.main_loop()  # this cannot except unless logger causes an issue

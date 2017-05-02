@@ -74,9 +74,9 @@ class CodeLockTest(unittest.TestCase):
         return len(self.get_file_contents(f))
 
     def setUpClass(self):
-        self.store_TIME_LOCKOUT_BEGIN = logger.TIME_LOCKOUT_BEGIN
-        self.store_TIME_LOCKOUT_END = logger.TIME_LOCKOUT_END
-        self.store_IMMEDIATE_REJECT = logger.IMMEDIATE_REJECT
+        self.store_TIME_LOCKOUT_BEGIN = code_lock.TIME_LOCKOUT_BEGIN
+        self.store_TIME_LOCKOUT_END = code_lock.TIME_LOCKOUT_END
+        self.store_IMMEDIATE_REJECT = code_lock.IMMEDIATE_REJECT
         self._datetime = datetime.datetime.now
 
     def setUp(self):
@@ -86,9 +86,9 @@ class CodeLockTest(unittest.TestCase):
         self.clk.cleanup()
         for c in self.main.wrapped:
             c.cleanup()
-        logger.TIME_LOCKOUT_BEGIN = self.store_TIME_LOCKOUT_BEGIN
-        logger.TIME_LOCKOUT_END = self.store_TIME_LOCKOUT_END
-        logger.IMMEDIATE_REJECT = self.store_IMMEDIATE_REJECT
+        code_lock.TIME_LOCKOUT_BEGIN = self.store_TIME_LOCKOUT_BEGIN
+        code_lock.TIME_LOCKOUT_END = self.store_TIME_LOCKOUT_END
+        code_lock.IMMEDIATE_REJECT = self.store_IMMEDIATE_REJECT
 
     def test_init(self):
         self.assertEqual(self.clk.iface, self.iface)
@@ -175,70 +175,197 @@ class CodeLockTest(unittest.TestCase):
 
     def test_digit_received_handler(self):
         self.clk.locked_out = True
-        logger.TIME_LOCKOUT_BEGIN = (0, 0)
-        logger.TIME_LOCKOUT_END = (0, 0)
+        code_lock.TIME_LOCKOUT_BEGIN = (0, 0)
+        code_lock.TIME_LOCKOUT_END = (0, 0)
         self.clk.digit_received_handler("1")
         self.assertFalse(self.iface.buzzer_enabled)
         self.clk.locked_out = False
 
         cdt = datetime.datetime.now()
         tdt = cdt + datetime.timedelta(minutes=2)
-        logger.TIME_LOCKOUT_BEGIN = datetime.time(tdt.hour, tdt.minute)
+        code_lock.TIME_LOCKOUT_BEGIN = datetime.time(tdt.hour, tdt.minute)
         tdt = cdt + datetime.timedelta(minutes=12)
-        logger.TIME_LOCKOUT_END = datetime.time(tdt.hour, tdt.minute)
+        code_lock.TIME_LOCKOUT_END = datetime.time(tdt.hour, tdt.minute)
         self.clk.digit_received_handler("1")
         self.assertFalse(self.iface.buzzer_enabled)
 
         cdt = datetime.datetime.now()
         tdt = cdt + datetime.timedelta(hours=2)
-        logger.TIME_LOCKOUT_BEGIN = datetime.time(tdt.hour, tdt.minute)
+        code_lock.TIME_LOCKOUT_BEGIN = datetime.time(tdt.hour, tdt.minute)
         tdt = cdt + datetime.timedelta(hours=4)
-        logger.TIME_LOCKOUT_END = datetime.time(tdt.hour, tdt.minute)
+        code_lock.TIME_LOCKOUT_END = datetime.time(tdt.hour, tdt.minute)
         self.clk.digit_received_handler("1")
         self.assertFalse(self.iface.buzzer_enabled)
 
         cdt = datetime.datetime.now()
         tdt = cdt + datetime.timedelta(minutes=-12)
-        logger.TIME_LOCKOUT_BEGIN = datetime.time(tdt.hour, tdt.minute)
+        code_lock.TIME_LOCKOUT_BEGIN = datetime.time(tdt.hour, tdt.minute)
         tdt = cdt + datetime.timedelta(minutes=-2)
-        logger.TIME_LOCKOUT_END = datetime.time(tdt.hour, tdt.minute)
+        code_lock.TIME_LOCKOUT_END = datetime.time(tdt.hour, tdt.minute)
         self.clk.digit_received_handler("1")
         self.assertFalse(self.iface.buzzer_enabled)
 
         cdt = datetime.datetime.now()
         tdt = cdt + datetime.timedelta(hours=-4)
-        logger.TIME_LOCKOUT_BEGIN = datetime.time(tdt.hour, tdt.minute)
+        code_lock.TIME_LOCKOUT_BEGIN = datetime.time(tdt.hour, tdt.minute)
         tdt = cdt + datetime.timedelta(hours=-2)
-        logger.TIME_LOCKOUT_END = datetime.time(tdt.hour, tdt.minute)
+        code_lock.TIME_LOCKOUT_END = datetime.time(tdt.hour, tdt.minute)
         self.clk.digit_received_handler("1")
         self.assertFalse(self.iface.buzzer_enabled)
 
     def test_digit_received_handler_time_dep_succ_min(self):
         cdt = datetime.datetime.now()
-        logger.TIME_LOCKOUT_BEGIN = datetime.time(cdt.hour, cdt.minute)
+        code_lock.TIME_LOCKOUT_BEGIN = datetime.time(cdt.hour, cdt.minute)
         tdt = cdt + datetime.timedelta(minutes=1)
-        logger.TIME_LOCKOUT_END = datetime.time(tdt.hour, tdt.minute)
+        code_lock.TIME_LOCKOUT_END = datetime.time(tdt.hour, tdt.minute)
         self.assertTrue(self.iface.buzzer_enabled)
 
     def test_digit_received_handler_time_dep_succ_hour(self):
         cdt = datetime.datetime.now()
-        logger.TIME_LOCKOUT_BEGIN = datetime.time(cdt.hour, cdt.minute)
+        code_lock.TIME_LOCKOUT_BEGIN = datetime.time(cdt.hour, cdt.minute)
         tdt = cdt + datetime.timedelta(hours=1)
-        logger.TIME_LOCKOUT_END = datetime.time(tdt.hour, tdt.minute)
+        code_lock.TIME_LOCKOUT_END = datetime.time(tdt.hour, tdt.minute)
         self.assertTrue(self.iface.buzzer_enabled)
 
-    def test_digit_received_handler_time_dep_succ_hour_0(self):
-        logger.TIME_LOCKOUT_BEGIN = datetime.time(0, 0)
-        logger.TIME_LOCKOUT_END = datetime.time(0, 0)
+    def test_digit_received_handler_time_dep_succ_0(self):
+        code_lock.TIME_LOCKOUT_BEGIN = datetime.time(0, 0)
+        code_lock.TIME_LOCKOUT_END = datetime.time(0, 0)
         self.assertTrue(self.iface.buzzer_enabled)
 
-    def test_digit_received_handler_time_dep_succ_hour_1(self):
-        logger.TIME_LOCKOUT_BEGIN = datetime.time(1, 1)
-        logger.TIME_LOCKOUT_END = datetime.time(1, 1)
+    def test_digit_received_handler_time_dep_succ_1(self):
+        code_lock.TIME_LOCKOUT_BEGIN = datetime.time(1, 1)
+        code_lock.TIME_LOCKOUT_END = datetime.time(1, 1)
         self.assertTrue(self.iface.buzzer_enabled)
+    
+    def test_digit_received_handler_password_incorrect_1a(self):
+        self.clk.digit_received_handler("1")
+        self.clk.digit_timeout.reset()
+        self.assertEqual(self.clk.current_input, ["1"])
+        self.clk.digit_received_handler("2")
+        self.clk.digit_timeout.reset()
+        self.assertEqual(self.clk.current_input, ["1", "2"])
+        self.clk.digit_received_handler("3")
+        self.clk.digit_timeout.reset()
+        self.assertEqual(self.clk.current_input, ["1", "2", "3"])
+        self.clk.digit_received_handler("5")
+        self.clk.digit_timeout.reset()
+        self.assertEqual(self.clk.incorrect_attempts, 1)
+        self.assertTrue(self.iface.led_red_flashed)
+        self.assertEqual(self.clk.current_input, [])
+    
+    def test_digit_received_handler_password_incorrect_2a(self):
+        self.clk.digit_received_handler("1")
+        self.clk.digit_timeout.reset()
+        self.assertEqual(self.clk.current_input, ["1"])
+        self.clk.digit_received_handler("4")
+        self.clk.digit_timeout.reset()
+        self.assertEqual(self.clk.current_input, ["1", "4"])
+        self.clk.digit_received_handler("3")
+        self.clk.digit_timeout.reset()
+        self.assertEqual(self.clk.current_input, ["1", "4", "3"])
+        self.clk.digit_received_handler("4")
+        self.clk.digit_timeout.reset()
+        self.assertEqual(self.clk.incorrect_attempts, 1)
+        self.assertTrue(self.iface.led_red_flashed)
+        self.assertEqual(self.clk.current_input, [])
+    
+    def test_digit_received_handler_password_incorrect_3a(self):
+        self.clk.digit_received_handler("4")
+        self.clk.digit_timeout.reset()
+        self.assertEqual(self.clk.current_input, ["4"])
+        self.clk.digit_received_handler("3")
+        self.clk.digit_timeout.reset()
+        self.assertEqual(self.clk.current_input, ["4", "3"])
+        self.clk.digit_received_handler("2")
+        self.clk.digit_timeout.reset()
+        self.assertEqual(self.clk.current_input, ["4", "3", "2"])
+        self.clk.digit_received_handler("1")
+        self.clk.digit_timeout.reset()
+        self.assertEqual(self.clk.incorrect_attempts, 1)
+        self.assertTrue(self.iface.led_red_flashed)
+        self.assertEqual(self.clk.current_input, [])
+    
+    def test_digit_received_handler_password_incorrect_1b(self):
+        code_lock.IMMEDIATE_REJECT = True
+        self.clk.digit_received_handler("1")
+        self.clk.digit_timeout.reset()
+        self.assertEqual(self.clk.current_input, ["1"])
+        self.clk.digit_received_handler("2")
+        self.clk.digit_timeout.reset()
+        self.assertEqual(self.clk.current_input, ["1", "2"])
+        self.clk.digit_received_handler("3")
+        self.clk.digit_timeout.reset()
+        self.assertEqual(self.clk.current_input, ["1", "2", "3"])
+        self.clk.digit_received_handler("5")
+        self.clk.digit_timeout.reset()
+        self.assertEqual(self.clk.incorrect_attempts, 1)
+        self.assertTrue(self.iface.led_red_flashed)
+        self.assertEqual(self.clk.current_input, [])
+    
+    def test_digit_received_handler_password_incorrect_2b(self):
+        code_lock.IMMEDIATE_REJECT = True
+        self.clk.digit_received_handler("1")
+        self.clk.digit_timeout.reset()
+        self.assertEqual(self.clk.current_input, ["1"])
+        self.clk.digit_received_handler("2")
+        self.clk.digit_timeout.reset()
+        self.assertEqual(self.clk.current_input, ["1", "2"])
+        self.clk.digit_received_handler("4")
+        self.clk.digit_timeout.reset()
+        self.assertEqual(self.clk.incorrect_attempts, 1)
+        self.assertTrue(self.iface.led_red_flashed)
+        self.assertEqual(self.clk.current_input, [])
+    
+    def test_digit_received_handler_password_incorrect_3b(self):
+        code_lock.IMMEDIATE_REJECT = True
+        self.clk.digit_received_handler("1")
+        self.clk.digit_timeout.reset()
+        self.assertEqual(self.clk.current_input, ["1"])
+        self.clk.digit_received_handler("3")
+        self.clk.digit_timeout.reset()
+        self.assertEqual(self.clk.incorrect_attempts, 1)
+        self.assertTrue(self.iface.led_red_flashed)
+        self.assertEqual(self.clk.current_input, [])
+    
+    def test_digit_received_handler_password_correct_a(self):
+        self.clk.digit_received_handler("1")
+        self.clk.digit_timeout.reset()
+        self.assertEqual(self.clk.current_input, ["1"])
+        self.clk.digit_received_handler("2")
+        self.clk.digit_timeout.reset()
+        self.assertEqual(self.clk.current_input, ["1", "2"])
+        self.clk.digit_received_handler("3")
+        self.clk.digit_timeout.reset()
+        self.assertEqual(self.clk.current_input, ["1", "2", "3"])
+        self.clk.digit_received_handler("4")
+        self.clk.digit_timeout.reset()
+        self.assertEqual(self.clk.incorrect_attempts, 0)
+        self.assertTrue(self.iface.led_green_flashed)
+        self.assertEqual(self.clk.current_input, [])
+    
+    def test_digit_received_handler_password_correct_b(self):
+        code_lock.IMMEDIATE_REJECT = True
+        self.clk.digit_received_handler("1")
+        self.clk.digit_timeout.reset()
+        self.assertEqual(self.clk.current_input, ["1"])
+        self.clk.digit_received_handler("2")
+        self.clk.digit_timeout.reset()
+        self.assertEqual(self.clk.current_input, ["1", "2"])
+        self.clk.digit_received_handler("3")
+        self.clk.digit_timeout.reset()
+        self.assertEqual(self.clk.current_input, ["1", "2", "3"])
+        self.clk.digit_received_handler("4")
+        self.clk.digit_timeout.reset()
+        self.assertEqual(self.clk.incorrect_attempts, 0)
+        self.assertTrue(self.iface.led_green_flashed)
+        self.assertEqual(self.clk.current_input, [])
 
     def test_digit_timeout_elapsed(self):
-        self.fail("test not written")
+        self.clk.digit_timeout_elapsed()
+        self.assertTrue(self.iface.led_red_flashed)
+        self.assertEqual(self.clk.incorrect_attempts, 0)
 
     def test_cleanup(self):
-        self.fail("test not written")
+        self.assertFalse(self.clk.digit_timeout.is_alive())
+        self.assertFalse(self.clk.locked_timeout.is_alive())
+        self.assertTrue(self.clk.access_log.closed)

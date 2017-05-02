@@ -59,6 +59,7 @@ class CodeLock:
         Resets digit timeout and stores the time of entry. Also handles the attempts count and LEDs.
         """
         self.digit_timeout.reset()
+        self.current_input = []
         self.access_log_append("code", correct)
         if correct:
             self.incorrect_attempts = 0

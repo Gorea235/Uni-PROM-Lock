@@ -8,17 +8,17 @@ BOUNCE_SEARCH = 0.005
 
 class GpioWrapper:
     def __init__(self, pin):
-        self.__pin = pin
-        self.__io_inp = True
+        self._pin = pin
+        self._io_inp = True
     
     @staticmethod
     def set_multiple_output(*args):
         for t in args:
-            t[0].__GpioWrapper_apply_output(t[1])
+            t[0]._apply_output(t[1])
         time.sleep(HARDWARE_WAIT)
 
     def set_io(self, state):
-        gpio.setup(self.__pin, state)
+        gpio.setup(self._pin, state)
 
     def input(self):
         self.set_io(gpio.IN)
@@ -27,12 +27,12 @@ class GpioWrapper:
         self.set_io(gpio.OUT)
 
     def set_output(self, value):
-        self.__apply_output(value)
+        self._apply_output(value)
         time.sleep(HARDWARE_WAIT)
     
-    def __apply_output(self, value):
+    def _apply_output(self, value):
         assert isinstance(value, bool)
-        gpio.output(self.__pin, value)
+        gpio.output(self._pin, value)
 
     def high(self):
         self.set_output(True)
@@ -45,7 +45,7 @@ class GpioWrapper:
         total_states = 0
         states_caught = 0
         while time.time() - start < BOUNCE_SEARCH:
-            total_states = gpio.input(self.__pin)
+            total_states = gpio.input(self._pin)
             states_caught += 1
         avg = total_states / states_caught
         return round(avg)

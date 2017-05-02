@@ -10,7 +10,8 @@ class GpioWrapper:
     def __init__(self, pin):
         self._pin = pin
         self._io_inp = True
-    
+        self.input()
+
     @staticmethod
     def set_multiple_output(*args):
         for t in args:
@@ -29,7 +30,7 @@ class GpioWrapper:
     def set_output(self, value):
         self._apply_output(value)
         time.sleep(HARDWARE_WAIT)
-    
+
     def _apply_output(self, value):
         assert isinstance(value, bool)
         gpio.output(self._pin, value)
@@ -49,11 +50,11 @@ class GpioWrapper:
             states_caught += 1
         avg = total_states / states_caught
         return round(avg)
-    
+
     @property
     def is_high(self):
         return self.state() == 1
-    
+
     @property
     def is_low(self):
         return self.state() == 0

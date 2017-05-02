@@ -53,12 +53,8 @@ class Main_Test:
 class Logger_Test(logger.Logger):
     def __init__(self):
         super().__init__(TMP_LOG_FILE)
-        self._Logger__out_file.close()
-        self._Logger__out_file = io.StringIO()
-
-    @property
-    def _out_file(self):
-        return self._Logger__out_file
+        self._out_file.close()
+        self._out_file = io.StringIO()
 
 
 class CodeLockTest(unittest.TestCase):

@@ -16,7 +16,7 @@ MAX_ATTEMPTS = 5
 
 
 class CodeLock:
-    def __init__(self, iface, logger, stdout, main):
+    def __init__(self, iface, logger, stdout):
         self.iface = iface  # store interface wrapper
         self.logger = logger  # store logger
         self.stdout = stdout  # store standard output
@@ -24,7 +24,6 @@ class CodeLock:
         # bind to digit recevied event
         self.iface.digit_received.bind(self.digit_received_handler)
         self.digit_timeout = Timeout(3)  # the digit timeout
-        main.wrap(self.digit_timeout)
 
         self.password = []  # password store
         if os.path.isfile(PWORD_FILE):  # file exists, read and use
@@ -46,7 +45,6 @@ class CodeLock:
         # the locked out timeout (supposed to go from 59-0, but should output
         # each second)
         self.locked_timeout = Timeout(1)
-        main.wrap(self.locked_timeout)
         self.incorrect_attempts = 0  # the number of incorrect attempts
         self.locked_time_left = 0  # the amount of time left for the user to be locked out
 
@@ -138,7 +136,7 @@ class CodeLock:
         """
         Cleans up the class.
         """
-        self.digit_timeout.reset()
-        self.locked_timeout.reset()
+        self.digit_timeout.cleanup()
+        self.locked_timeout.cleanup()
         self.access_log_append("shutdown", None)
         self.access_log.close()

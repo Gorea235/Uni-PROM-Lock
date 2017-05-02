@@ -12,8 +12,7 @@ class CodeLockTest(unittest.TestCase):
         iface = InferfaceWrapper_Test()
         log = Logger_Test()
         stdout = Stdout_Test()
-        main = Main_Test()
-        return code_lock.CodeLock(iface, log, stdout, main), iface, log, stdout, main
+        return code_lock.CodeLock(iface, log, stdout), iface, log, stdout
 
     def get_file_contents(self, f):
         f.flush()
@@ -36,15 +35,13 @@ class CodeLockTest(unittest.TestCase):
     _datetime = datetime.datetime.now
 
     def setUp(self):
-        self.clk, self.iface, self.log, self.stdout, self.main = self.get_code_lock()
+        self.clk, self.iface, self.log, self.stdout = self.get_code_lock()
 
     def tearDown(self):
         try:
             self.clk.cleanup()
         except:
             pass
-        for c in self.main.wrapped:
-            c.cleanup()
         code_lock.TIME_LOCKOUT_BEGIN = self.store_TIME_LOCKOUT_BEGIN
         code_lock.TIME_LOCKOUT_END = self.store_TIME_LOCKOUT_END
         code_lock.IMMEDIATE_REJECT = self.store_IMMEDIATE_REJECT
@@ -72,8 +69,6 @@ class CodeLockTest(unittest.TestCase):
         self.assertEqual(self.clk.locked_timeout._timer.interval, 1)
         self.assertEqual(self.clk.incorrect_attempts, 0)
         self.assertEqual(self.clk.locked_time_left, 0)
-
-        self.assertEqual(len(self.main.wrapped), 2)
 
     def test_access_log_append(self):
         l = self.get_file_length(self.clk.access_log)

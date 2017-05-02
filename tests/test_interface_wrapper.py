@@ -62,8 +62,7 @@ class InterfaceWrapperTest(unittest.TestCase):
 
     def setUp(self):
         self.log = Logger_Test()
-        self.main = Main_Test()
-        self.iface = interface_wrapper.InterfaceWrapper(self.log, self.main)
+        self.iface = interface_wrapper.InterfaceWrapper(self.log)
 
     def tearDown(self):
         self.iface.cleanup()

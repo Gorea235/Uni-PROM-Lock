@@ -92,7 +92,7 @@ class InterfaceWrapper:
     The main class used by the startup to handle the interfacing.
     """
 
-    def __init__(self, logger, main):
+    def __init__(self, logger):
         gpio.setwarnings(False)
         gpio.setmode(gpio.BCM)
         self.logger = logger

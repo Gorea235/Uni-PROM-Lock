@@ -36,15 +36,6 @@ class Stdout_Test:
         self._overwrite_line = value
 
 
-class Main_Test:
-    def __init__(self):
-        self.wrapped = []
-
-    def wrap(self, *args):
-        for c in args:
-            self.wrapped.append(c)
-
-
 class Logger_Test(logger.Logger):
     def __init__(self):
         super().__init__(TMP_LOG_FILE)

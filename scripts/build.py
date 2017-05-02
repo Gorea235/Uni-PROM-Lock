@@ -26,10 +26,10 @@ def copy_contents(frm, to):
 
 if __name__ == "__main__":
     if not os.path.isdir(BUILD):
-        print("Generating bin folder")
+        print("Generating build folder")
         os.mkdir(BUILD)
     else:
-        print("Clearing bin folder")
+        print("Clearing build folder")
         for f in os.listdir(BUILD):
             os.remove(os.path.join(BUILD, f))
 

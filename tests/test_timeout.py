@@ -19,6 +19,11 @@ class TimeoutTest(unittest.TestCase):
     def test_start(self):
         self.tm.start()
         self.assertTrue(self.tm.active)
+        self.tm.reset()
+        time.sleep(0.001)
+        self.assertFalse(self.tm.active)
+        self.tm.start()
+        self.assertTrue(self.tm.active)
 
     def fired_tester_func(self):
         self.fired = True
@@ -35,11 +40,13 @@ class TimeoutTest(unittest.TestCase):
     def test_reset(self):
         self.tm.start()
         self.tm.reset()
+        time.sleep(0.001)
         self.assertFalse(self.tm.active)
     
     def test_restart(self):
         self.tm.start()
-        self.tm.reset()
+        self.tm.restart()
+        time.sleep(0.001)
         self.assertTrue(self.tm.active)
     
     def test_active(self):
@@ -50,4 +57,5 @@ class TimeoutTest(unittest.TestCase):
     def test_cleanup(self):
         self.tm.start()
         self.tm.cleanup()
+        time.sleep(0.001)
         self.assertFalse(self.tm.active)

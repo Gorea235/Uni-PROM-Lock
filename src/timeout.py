@@ -9,9 +9,13 @@ class Timeout(object):
     """
 
     def __init__(self, length):
-        self._timer = threading.Timer(length, self._timed_out)
+        self.length = length
+        self._setup_timer()
         self.elapsed = event.Event()
         """The elapsed event, fires when timeout completes."""
+
+    def _setup_timer(self):
+        self._timer = threading.Timer(self.length, self._timed_out)
 
     def start(self):
         """
@@ -27,6 +31,7 @@ class Timeout(object):
         Stops timeout and reset the time remaining back to full timeout length.
         """
         self._timer.cancel()
+        self._setup_timer()
 
     def restart(self):
         """

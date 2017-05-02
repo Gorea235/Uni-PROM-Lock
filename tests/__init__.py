@@ -1,4 +1,4 @@
-#! /usr/bin/env
+#! /usr/bin/env python3
 __all__ = ["test_source"]
 
 TMP_DIR = "tmp"
@@ -11,7 +11,6 @@ def test_source():
 
     if not os.path.isdir(TMP_DIR):
         os.mkdir(TMP_DIR)
-    os.chdir(TMP_DIR + "/")
     for f in os.listdir(TMP_DIR):
         ff = os.path.join(TMP_DIR, f)
         if os.path.isfile(ff):
@@ -48,6 +47,7 @@ def test_source():
     suite.addTests(loader.loadTestsFromModule(test_timeout))
 
     # init runner and begin testing
+    os.chdir(TMP_DIR + "/")
     runner = unittest.TextTestRunner()
     result = runner.run(suite)
 

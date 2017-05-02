@@ -23,17 +23,26 @@ class CodeLockTest(unittest.TestCase):
     def get_file_length(self, f):
         return len(self.get_file_contents(f))
 
-    def setUpClass(self):
-        self.store_TIME_LOCKOUT_BEGIN = code_lock.TIME_LOCKOUT_BEGIN
-        self.store_TIME_LOCKOUT_END = code_lock.TIME_LOCKOUT_END
-        self.store_IMMEDIATE_REJECT = code_lock.IMMEDIATE_REJECT
-        self._datetime = datetime.datetime.now
+##    @staticmethod
+##    def setUpClass(cls):
+##        cls.store_TIME_LOCKOUT_BEGIN = code_lock.TIME_LOCKOUT_BEGIN
+##        cls.store_TIME_LOCKOUT_END = code_lock.TIME_LOCKOUT_END
+##        cls.store_IMMEDIATE_REJECT = code_lock.IMMEDIATE_REJECT
+##        cls._datetime = datetime.datetime.now
+
+    store_TIME_LOCKOUT_BEGIN = code_lock.TIME_LOCKOUT_BEGIN
+    store_TIME_LOCKOUT_END = code_lock.TIME_LOCKOUT_END
+    store_IMMEDIATE_REJECT = code_lock.IMMEDIATE_REJECT
+    _datetime = datetime.datetime.now
 
     def setUp(self):
         self.clk, self.iface, self.log, self.stdout, self.main = self.get_code_lock()
 
     def tearDown(self):
-        self.clk.cleanup()
+        try:
+            self.clk.cleanup()
+        except:
+            pass
         for c in self.main.wrapped:
             c.cleanup()
         code_lock.TIME_LOCKOUT_BEGIN = self.store_TIME_LOCKOUT_BEGIN
@@ -49,7 +58,7 @@ class CodeLockTest(unittest.TestCase):
         self.assertTrue(isinstance(self.clk.digit_timeout, timeout.Timeout))
         self.assertEqual(self.clk.digit_timeout._timer.interval, 3)
 
-        self.assertEqual(self.clk.password, ["1", "2", "3", "4"])
+        self.assertEqual(self.clk.password, "1234")
         self.assertTrue(os.path.isfile("password.txt"))
         with open("password.txt") as f:
             self.assertEqual(f.read().strip(), "1234")
@@ -94,9 +103,9 @@ class CodeLockTest(unittest.TestCase):
         self.clk.password_entered(True)
         self.assertEqual(self.clk.incorrect_attempts, 0)
         self.assertTrue(self.iface.led_green_flashed)
-        for i in range(5):
+        for i in range(1, 6):
             self.clk.password_entered(False)
-            self.assertEqual(self.clk.incorrect_attempts, i)
+            self.assertEqual(self.clk.incorrect_attempts, i % 5)
         self.assertTrue(self.clk.locked_timeout.active)
         self.clk.locked_timeout.reset()
 
@@ -168,6 +177,7 @@ class CodeLockTest(unittest.TestCase):
         code_lock.TIME_LOCKOUT_BEGIN = datetime.time(cdt.hour, cdt.minute)
         tdt = cdt + datetime.timedelta(minutes=1)
         code_lock.TIME_LOCKOUT_END = datetime.time(tdt.hour, tdt.minute)
+        self.clk.digit_received_handler("1")
         self.assertTrue(self.iface.buzzer_enabled)
 
     def test_digit_received_handler_time_dep_succ_hour(self):
@@ -175,19 +185,24 @@ class CodeLockTest(unittest.TestCase):
         code_lock.TIME_LOCKOUT_BEGIN = datetime.time(cdt.hour, cdt.minute)
         tdt = cdt + datetime.timedelta(hours=1)
         code_lock.TIME_LOCKOUT_END = datetime.time(tdt.hour, tdt.minute)
+        self.clk.digit_received_handler("1")
         self.assertTrue(self.iface.buzzer_enabled)
 
     def test_digit_received_handler_time_dep_succ_0(self):
         code_lock.TIME_LOCKOUT_BEGIN = datetime.time(0, 0)
         code_lock.TIME_LOCKOUT_END = datetime.time(0, 0)
+        self.clk.digit_received_handler("1")
         self.assertTrue(self.iface.buzzer_enabled)
 
     def test_digit_received_handler_time_dep_succ_1(self):
         code_lock.TIME_LOCKOUT_BEGIN = datetime.time(1, 1)
         code_lock.TIME_LOCKOUT_END = datetime.time(1, 1)
+        self.clk.digit_received_handler("1")
         self.assertTrue(self.iface.buzzer_enabled)
 
     def test_digit_received_handler_password_incorrect_1a(self):
+        code_lock.TIME_LOCKOUT_BEGIN = datetime.time(0, 0)
+        code_lock.TIME_LOCKOUT_END = datetime.time(0, 0)
         self.clk.digit_received_handler("1")
         self.clk.digit_timeout.reset()
         self.assertEqual(self.clk.current_input, ["1"])
@@ -204,6 +219,8 @@ class CodeLockTest(unittest.TestCase):
         self.assertEqual(self.clk.current_input, [])
 
     def test_digit_received_handler_password_incorrect_2a(self):
+        code_lock.TIME_LOCKOUT_BEGIN = datetime.time(0, 0)
+        code_lock.TIME_LOCKOUT_END = datetime.time(0, 0)
         self.clk.digit_received_handler("1")
         self.clk.digit_timeout.reset()
         self.assertEqual(self.clk.current_input, ["1"])
@@ -220,6 +237,8 @@ class CodeLockTest(unittest.TestCase):
         self.assertEqual(self.clk.current_input, [])
 
     def test_digit_received_handler_password_incorrect_3a(self):
+        code_lock.TIME_LOCKOUT_BEGIN = datetime.time(0, 0)
+        code_lock.TIME_LOCKOUT_END = datetime.time(0, 0)
         self.clk.digit_received_handler("4")
         self.clk.digit_timeout.reset()
         self.assertEqual(self.clk.current_input, ["4"])
@@ -236,6 +255,8 @@ class CodeLockTest(unittest.TestCase):
         self.assertEqual(self.clk.current_input, [])
 
     def test_digit_received_handler_password_incorrect_1b(self):
+        code_lock.TIME_LOCKOUT_BEGIN = datetime.time(0, 0)
+        code_lock.TIME_LOCKOUT_END = datetime.time(0, 0)
         code_lock.IMMEDIATE_REJECT = True
         self.clk.digit_received_handler("1")
         self.clk.digit_timeout.reset()
@@ -253,6 +274,8 @@ class CodeLockTest(unittest.TestCase):
         self.assertEqual(self.clk.current_input, [])
 
     def test_digit_received_handler_password_incorrect_2b(self):
+        code_lock.TIME_LOCKOUT_BEGIN = datetime.time(0, 0)
+        code_lock.TIME_LOCKOUT_END = datetime.time(0, 0)
         code_lock.IMMEDIATE_REJECT = True
         self.clk.digit_received_handler("1")
         self.clk.digit_timeout.reset()
@@ -267,6 +290,8 @@ class CodeLockTest(unittest.TestCase):
         self.assertEqual(self.clk.current_input, [])
 
     def test_digit_received_handler_password_incorrect_3b(self):
+        code_lock.TIME_LOCKOUT_BEGIN = datetime.time(0, 0)
+        code_lock.TIME_LOCKOUT_END = datetime.time(0, 0)
         code_lock.IMMEDIATE_REJECT = True
         self.clk.digit_received_handler("1")
         self.clk.digit_timeout.reset()
@@ -278,6 +303,8 @@ class CodeLockTest(unittest.TestCase):
         self.assertEqual(self.clk.current_input, [])
 
     def test_digit_received_handler_password_correct_a(self):
+        code_lock.TIME_LOCKOUT_BEGIN = datetime.time(0, 0)
+        code_lock.TIME_LOCKOUT_END = datetime.time(0, 0)
         self.clk.digit_received_handler("1")
         self.clk.digit_timeout.reset()
         self.assertEqual(self.clk.current_input, ["1"])
@@ -294,6 +321,8 @@ class CodeLockTest(unittest.TestCase):
         self.assertEqual(self.clk.current_input, [])
 
     def test_digit_received_handler_password_correct_b(self):
+        code_lock.TIME_LOCKOUT_BEGIN = datetime.time(0, 0)
+        code_lock.TIME_LOCKOUT_END = datetime.time(0, 0)
         code_lock.IMMEDIATE_REJECT = True
         self.clk.digit_received_handler("1")
         self.clk.digit_timeout.reset()
@@ -316,6 +345,7 @@ class CodeLockTest(unittest.TestCase):
         self.assertEqual(self.clk.incorrect_attempts, 0)
 
     def test_cleanup(self):
+        self.clk.cleanup()
         self.assertFalse(self.clk.digit_timeout.active)
         self.assertFalse(self.clk.locked_timeout.active)
         self.assertTrue(self.clk.access_log.closed)

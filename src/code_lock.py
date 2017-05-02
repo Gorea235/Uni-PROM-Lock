@@ -29,16 +29,16 @@ class CodeLock:
         self.password = []  # password store
         if os.path.isfile(PWORD_FILE):  # file exists, read and use
             with open(PWORD_FILE) as f:
-                self.password = f.read().strip().split()  # reads and cleans up
+                self.password = f.read().strip()  # reads and cleans up
             self.logger.log("password read as {}", self.password)
         else:
-            self.password = DEFAULT_PWORD.split()  # use default password
+            self.password = DEFAULT_PWORD  # use default password
             self.logger.log("password defaulted to {}", self.password)
             with open(PWORD_FILE, "w") as f:
-                f.write("".join(self.password))  # write new password.txt
+                f.write(self.password)  # write new password.txt
             self.logger.log("wrote new password file to {}", PWORD_FILE)
 
-        self.access_log = open(ACCESS_LOG_FILE, "a")
+        self.access_log = open(ACCESS_LOG_FILE, "a+")
         self.access_log_append("startup", None)
 
         self.current_input = []  # current digit input
@@ -52,7 +52,7 @@ class CodeLock:
 
     def access_log_append(self, event_name, success):
         self.access_log.write(
-            "{},{:%Y-%m-%dT%H:%M:%S},{}".format(event_name, datetime.datetime.now(), success))
+            "{},{:%Y-%m-%dT%H:%M:%S},{}\n".format(event_name, datetime.datetime.now(), success))
 
     def password_entered(self, correct, count_attempt=True):
         """

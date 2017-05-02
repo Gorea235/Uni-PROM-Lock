@@ -34,7 +34,7 @@ class GpioWrapper_Test:
 
     def _apply_output(self, value):
         assert isinstance(value, bool)
-        self._output = False
+        self._output = value
 
     def high(self):
         self.set_output(True)
@@ -58,8 +58,7 @@ interface_wrapper.GpioWrapper = GpioWrapper_Test
 
 
 class InterfaceWrapperTest(unittest.TestCase):
-    def setUpClass(self):
-        self._rcv_digit = None
+    _rcv_digit = None
 
     def setUp(self):
         self.log = Logger_Test()
@@ -82,6 +81,7 @@ class InterfaceWrapperTest(unittest.TestCase):
         self.assertEqual(self.iface.gpio.io._mode, gpio.OUT)
 
     def test_start_read(self):
+        self.iface._start_read()
         self.assertFalse(self.iface.gpio.reg._output)
         self.assertEqual(self.iface.gpio._lines["d0"]._mode, gpio.IN)
         self.assertEqual(self.iface.gpio._lines["d1"]._mode, gpio.IN)
@@ -150,6 +150,7 @@ class InterfaceWrapperTest(unittest.TestCase):
         self.assertFalse(self.fired)
 
     def test_start_write(self):
+        self.iface._start_write()
         self.assertTrue(self.iface.gpio.reg._output)
         self.assertEqual(self.iface.gpio._lines["d0"]._mode, gpio.OUT)
         self.assertEqual(self.iface.gpio._lines["d1"]._mode, gpio.OUT)
@@ -157,43 +158,47 @@ class InterfaceWrapperTest(unittest.TestCase):
         self.assertFalse(self.iface.gpio.io._output)
 
     def get_digit_output(self):
-        return "{}{}{}".format(self.iface.gpio._lines["d2"]._output,
-                               self.iface.gpio._lines["d1"]._output,
-                               self.iface.gpio._lines["d0"]._output)
+        return [self.iface.gpio._lines["d2"]._output,
+               self.iface.gpio._lines["d1"]._output,
+               self.iface.gpio._lines["d0"]._output]
 
     def test_do_write_phase(self):
         self.iface._do_write_phase()
-        self.assertEqual(self.get_digit_output(), "001")
+        self.assertEqual(self.get_digit_output(), [False, False, False])
         self.iface._do_write_phase()
-        self.assertEqual(self.get_digit_output(), "010")
+        self.assertEqual(self.get_digit_output(), [False, False, True])
         self.iface._do_write_phase()
-        self.assertEqual(self.get_digit_output(), "011")
+        self.assertEqual(self.get_digit_output(), [False, True, False])
         self.iface._do_write_phase()
-        self.assertEqual(self.get_digit_output(), "000")
+        self.assertEqual(self.get_digit_output(), [False, True, True])
 
         self.iface.flash_green_led()
         self.iface._do_write_phase()
-        self.assertEqual(self.get_digit_output(), "100")
+        self.assertEqual(self.get_digit_output(), [True, False, False])
         self.assertFalse(self.iface._led_green_apply)
 
         self.iface.flash_red_led()
         self.iface._do_write_phase()
-        self.assertEqual(self.get_digit_output(), "101")
+        self.assertEqual(self.get_digit_output(), [True, False, True])
         self.assertFalse(self.iface._led_red_apply)
 
         self.iface.beep_buzzer()
         self.iface._do_write_phase()
-        self.assertEqual(self.get_digit_output(), "110")
+        self.assertEqual(self.get_digit_output(), [True, True, False])
         self.assertFalse(self.iface._buzzer_apply)
 
     def test_cleanup(self):
+        self.iface.cleanup()
         self.assertFalse(self.iface._run_loop)
 
     def test_flash_green_led(self):
+        self.iface.flash_green_led()
         self.assertTrue(self.iface._led_green_apply)
 
     def test_flash_red_led(self):
+        self.iface.flash_red_led()
         self.assertTrue(self.iface._led_red_apply)
 
     def test_beep_buzzer(self):
+        self.iface.beep_buzzer()
         self.assertTrue(self.iface._buzzer_apply)

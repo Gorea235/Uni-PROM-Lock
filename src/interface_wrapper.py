@@ -97,6 +97,8 @@ class InterfaceWrapper:
         gpio.setmode(gpio.BCM)
         self.logger = logger
         self.gpio = GpioLines()
+        self.gpio.reg.output()
+        self.gpio.io.output()
         self.digit_received = Event()
         """The digit received event, fired when the class detects that a digit has been pressed"""
         self._run_loop = True
@@ -144,7 +146,7 @@ class InterfaceWrapper:
             self.logger.logt("state readings: {}", states)
             active = None
             for s in range(len(states)):
-                if states[s]:
+                if not states[s]:
                     active = s
                     break
             if active is not None:
@@ -181,9 +183,9 @@ class InterfaceWrapper:
             self._current_digit += 1
             self._current_digit %= DPOS_NDIGITS
             self.logger.logt("low line set to next keypad row")
-        bin_out = bin(low_line)[2:]
+        bin_out = bin(low_line)[2:].zfill(3)
         self.logger.logt("gpio states: {}", bin_out)
-        self.gpio.d_set_states([bool(int(d)) for d in bin_out])
+        self.gpio.d_set_states([bool(int(d)) for d in reversed(bin_out)])
 
     def cleanup(self):
         """

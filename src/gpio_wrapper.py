@@ -46,7 +46,7 @@ class GpioWrapper:
         total_states = 0
         states_caught = 0
         while time.time() - start < BOUNCE_SEARCH:
-            total_states = gpio.input(self._pin)
+            total_states += gpio.input(self._pin)
             states_caught += 1
         avg = total_states / states_caught
         return round(avg)

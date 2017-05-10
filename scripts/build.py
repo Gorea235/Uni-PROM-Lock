@@ -17,12 +17,14 @@ SRC = os.path.join(_TOP, "src")
 LIB = os.path.join(_TOP, "lib")
 BUILD = os.path.join(_TOP, "build")
 
+
 def copy_contents(frm, to):
     for f in os.listdir(frm):
         from_f = os.path.join(frm, f)
         if os.path.isfile(from_f):
             print("Copying file '{}' from '{}' to '{}'".format(f, frm, to))
             shutil.copyfile(from_f, os.path.join(to, f))
+
 
 if __name__ == "__main__":
     if not os.path.isdir(BUILD):

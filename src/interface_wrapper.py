@@ -191,7 +191,7 @@ class InterfaceWrapper:
         """
         Cleans up any variables before exit.
         """
-        self.logger.log("cleaning up interface usage")
+        #self.logger.log("cleaning up interface usage")
         self._run_loop = False
         gpio.cleanup()
 

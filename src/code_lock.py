@@ -17,11 +17,10 @@ PWORD_FILE = "password.txt"
 ACCESS_LOG_FILE = "access_log.csv"
 DEFAULT_PWORD = "1234"
 IMMEDIATE_REJECT = False
-LOCKED_OUT_TIME = 60
-# if the following values are different, then the lock will only allow attempts
-# between the times
 TIME_LOCKOUT_BEGIN = datetime.time(0, 0)  # hour, minute
 TIME_LOCKOUT_END = datetime.time(0, 0)  # hour, minute
+USE_MAX_ATTEMPTS = True
+LOCKED_OUT_TIME = 60
 MAX_ATTEMPTS = 5
 PRINT_MSGS = True
 
@@ -63,11 +62,19 @@ class CodeLock:
         self.locked_timeout.elapsed.bind(self.locked_timeout_elapsed)
         self.incorrect_attempts = 0  # the number of incorrect attempts
         self.locked_time_left = 0  # the amount of time left for the user to be locked out
+        self.ignore_digits = False
+        self.correct_clear_timeout = Timeout(3)
+        self.correct_clear_timeout.elapsed.bind(self.clear_timeout_elapsed)
+        self.incorrect_clear_timeout = Timeout(1)
+        self.incorrect_clear_timeout.elapsed.bind(self.clear_timeout_elapsed)
+        self.cover_digit_timeout = Timeout(1)
+        self.cover_digit_timeout.elapsed.bind(self.cover_digit_timeout_elapsed)
 
         if pi_leds_available:
             pi_leds.setup_leds()
         else:
-            self.logger.logw("unable to import LED lib, RPi LEDs will not be functional")
+            self.logger.logw(
+                "unable to import LED lib, RPi LEDs will not be functional")
             self.logger.loge(_pi_leds_import_error)
 
         self.logger.log("code lock init complete")
@@ -81,20 +88,23 @@ class CodeLock:
         Resets digit timeout and stores the time of entry. Also handles the attempts count and LEDs.
         """
         self.digit_timeout.reset()
+        self.ignore_digits = True
         self.current_input = []
-        self.stdout.overwrite_text = ""
         self.access_log_append("code", correct)
         if correct:
             if PRINT_MSGS:
                 print("Unlocked!")
+            self.correct_clear_timeout.start()
             self.incorrect_attempts = 0
             self.iface.flash_green_led()
             self.logger.log("password correct, attempts reset and LED pulsed")
         else:
-            if count_attempt:
+            if count_attempt and USE_MAX_ATTEMPTS:
                 self.incorrect_attempts += 1
                 if PRINT_MSGS:
-                    print("Incorrect, you have {} more tries left".format(MAX_ATTEMPTS - self.incorrect_attempts))
+                    print("Incorrect, you have {} more tries left".format(
+                        MAX_ATTEMPTS - self.incorrect_attempts))
+            self.incorrect_clear_timeout.start()
             self.iface.flash_red_led()
             if self.incorrect_attempts == MAX_ATTEMPTS:
                 self.lockout()
@@ -118,7 +128,8 @@ class CodeLock:
         self.locked_time_left -= 1
         self.logger.logd(
             "locked out time left: {}".format(self.locked_time_left))
-        self.stdout.overwrite_text = str(self.locked_time_left)
+        self.stdout.overwrite_text = "LOCKED ({})".format(
+            self.locked_time_left)
         if self.locked_time_left <= 0:
             self.locked_out = False
             self.logger.log("locked timeout finished, disabling")
@@ -126,11 +137,22 @@ class CodeLock:
             self.locked_timeout.start()
             self.logger.logd("restarted timeout second counter")
 
+    def clear_timeout_elapsed(self):
+        self.cover_digit_timeout.reset()
+        self.stdout.overwrite_text = ""
+        self.ignore_digits = False
+
+    def cover_digit_timeout_elapsed(self):
+        self.overwrite_text = "*" * len(self.current_input)
+
     def digit_received_handler(self, digit):
         """
         Handles the event when the user inputs a digit into the keypad.
         """
         self.logger.log("received digit '{}'".format(digit))
+        if self.ignore_digits:
+            self.logger.log("currently ignoring digits, skipping")
+            return
         if self.locked_out:
             self.logger.log("locked out, ignoring digit")
             return
@@ -142,6 +164,7 @@ class CodeLock:
         self.iface.beep_buzzer()
         _i = len(self.current_input)
         self.stdout.overwrite_text = ("*" * len(self.current_input)) + digit
+        self.cover_digit_timeout.restart()
         self.current_input.append(digit)
         self._digit_timeout_time = time.time()
         self.digit_timeout.restart()
@@ -161,7 +184,8 @@ class CodeLock:
         """
         now = time.time()
         passed = now - self._digit_timeout_time
-        self.logger.logd("digit timeout: {} seconds have passed since last input", passed)
+        self.logger.logd(
+            "digit timeout: {} seconds have passed since last input", passed)
         if pi_leds_available:
             pi_leds.set_leds(max(0, min(passed / DIGIT_TIMEOUT_LENGTH, 1)))
         if passed >= DIGIT_TIMEOUT_LENGTH:
@@ -177,5 +201,8 @@ class CodeLock:
         self.stdout.end_overwrite_output()
         self.digit_timeout.cleanup()
         self.locked_timeout.cleanup()
+        self.correct_clear_timeout.cleanup()
+        self.incorrect_clear_timeout.cleanup()
+        self.cover_digit_timeout.cleanup()
         self.access_log_append("shutdown", None)
         self.access_log.close()

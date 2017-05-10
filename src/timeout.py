@@ -24,6 +24,7 @@ class Timeout(object):
         self._timer.start()
 
     def _timed_out(self):
+        self._setup_timer()
         self.elapsed.fire()
 
     def reset(self):
@@ -39,7 +40,7 @@ class Timeout(object):
         """
         self.reset()
         self.start()
-    
+
     @property
     def active(self):
         return self._timer.is_alive()

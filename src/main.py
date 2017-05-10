@@ -16,7 +16,7 @@ class App:
         self._cleanup_event = Event()
         self.stdout = StdoutOverwrite()
         self.logger = Logger(LOG_FILE)
-        self.logger.trace_level = TRACE
+        self.logger.trace_level = INFO
         self.iface = InterfaceWrapper(self.logger)
         self.internal = CodeLock(self.iface, self.logger, self.stdout)
         self.wrap(self.stdout, self.logger, self.iface, self.internal)

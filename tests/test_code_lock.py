@@ -5,6 +5,10 @@ import code_lock
 import timeout
 import os
 import datetime
+import time
+
+code_lock.PRINT_MSGS = False
+code_lock.IMMEDIATE_REJECT = False
 
 
 class CodeLockTest(unittest.TestCase):
@@ -53,7 +57,8 @@ class CodeLockTest(unittest.TestCase):
 
         self.assertGreater(len(self.iface.digit_received._event_funcs), 0)
         self.assertTrue(isinstance(self.clk.digit_timeout, timeout.Timeout))
-        self.assertEqual(self.clk.digit_timeout._timer.interval, 3)
+##        self.assertEqual(self.clk.digit_timeout._timer.interval, 3)
+##        self.assertEqual(self.clk.digit_timeout._timer.interval, 0.1)
 
         self.assertEqual(self.clk.password, "1234")
         self.assertTrue(os.path.isfile("password.txt"))
@@ -335,6 +340,7 @@ class CodeLockTest(unittest.TestCase):
         self.assertEqual(self.clk.current_input, [])
 
     def test_digit_timeout_elapsed(self):
+        self.clk._digit_timeout_time = time.time() - 3
         self.clk.digit_timeout_elapsed()
         self.assertTrue(self.iface.led_red_flashed)
         self.assertEqual(self.clk.incorrect_attempts, 0)

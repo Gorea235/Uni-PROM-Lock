@@ -104,16 +104,20 @@ class InterfaceWrapper:
         self._run_loop = True
         self._current_digit = 0
         self._digit_down = False
+        self._done_line_write = False
         # the follow store the value to apply to the given output on the next
         # pass
         self._led_green_apply = False
         self._led_red_apply = False
         self._buzzer_apply = False
 
+        self.logger.log("interface wrapper init complete")
+
     def main_loop(self):
         """
         Starts up the main loop of the interface, loop is wrapped in an exception handler that can handle both ‘Exception’ and ‘KeyboardInterrupt’.
         """
+        self.logger.log("Main loop started")
         try:
             while self._run_loop:
                 # write phase
@@ -125,22 +129,34 @@ class InterfaceWrapper:
         except Exception as ex:
             self.logger.loge(ex)
         except KeyboardInterrupt:
-            self.logger.log("Code lock shutting down")
+            self.logger.log("Beginning shutdown")
+
+    def _inc_current_digit(self):
+        self._current_digit += 1
+        self._current_digit %= DPOS_NDIGITS
+
+    def _dec_current_digit(self):
+        self._current_digit -= 1
+        self._current_digit %= DPOS_NDIGITS
 
     def _start_read(self):
-        self.gpio.reg.low()
-        self.logger.logt("register line low")
         self.gpio.d_input()
         self.logger.logt("data lines set to input")
-        self.gpio.io.high()
+        self.gpio.io.low()
         self.logger.logt("io line high")
         self.logger.logt("gpio lines configured to read")
 
     def _do_read_phase(self):
+        if not self._done_line_write:
+            self.logger.logt("skipped reading rows due to previous write not being to column")
+            return
         if self._digit_down:
             if self.gpio.d_all_high():
                 self._digit_down = False
+                self._inc_current_digit()
                 self.logger.logt("digit no longer pressed, waiting for next input")
+            else:
+                self.logger.logt("digit still pressed")
         else:
             states = self.gpio.d_states()
             self.logger.logt("state readings: {}", states)
@@ -151,21 +167,21 @@ class InterfaceWrapper:
                     break
             if active is not None:
                 self._digit_down = True
+                self._dec_current_digit()
                 dgt = DIGIT_CONVERT[self._current_digit][s]
                 self.logger.logt("converted digit: {}", dgt)
                 self.digit_received.fire(dgt)
 
     def _start_write(self):
-        self.gpio.io.low()
+        self.gpio.io.high()
         self.logger.logt("io line low")
         self.gpio.d_output()
         self.logger.logt("data lines set to output")
-        self.gpio.reg.high()
-        self.logger.logt("register line high")
         self.logger.logt("gpio lines configured to write")
 
     def _do_write_phase(self):
         low_line = None
+        self._done_line_write = False
         if self._led_green_apply:
             low_line = DPOS_GREEN_LED
             self._led_green_apply = False
@@ -180,18 +196,21 @@ class InterfaceWrapper:
             self.logger.logt("low line set to buzzer")
         else:  # apply keypad input
             low_line = DPOS_DIGIT[self._current_digit]
-            self._current_digit += 1
-            self._current_digit %= DPOS_NDIGITS
+            if not self._digit_down:
+                self._inc_current_digit()
+            self._done_line_write = True
             self.logger.logt("low line set to next keypad row")
         bin_out = bin(low_line)[2:].zfill(3)
         self.logger.logt("gpio states: {}", bin_out)
         self.gpio.d_set_states([bool(int(d)) for d in reversed(bin_out)])
+        self.gpio.reg.high()
+        self.gpio.reg.low()
+        self.logger.logt("pulsed register line")
 
     def cleanup(self):
         """
         Cleans up any variables before exit.
         """
-        #self.logger.log("cleaning up interface usage")
         self._run_loop = False
         gpio.cleanup()
 

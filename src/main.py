@@ -2,7 +2,7 @@
 from code_lock import CodeLock
 from event import Event
 from interface_wrapper import InterfaceWrapper
-from logger import Logger
+from logger import *
 from stdout import StdoutOverwrite
 
 LOG_FILE = "events.log"
@@ -16,6 +16,7 @@ class App:
         self._cleanup_event = Event()
         self.stdout = StdoutOverwrite()
         self.logger = Logger(LOG_FILE)
+        self.logger.trace_level = TRACE
         self.iface = InterfaceWrapper(self.logger)
         self.internal = CodeLock(self.iface, self.logger, self.stdout)
         self.wrap(self.stdout, self.logger, self.iface, self.internal)

@@ -1,8 +1,18 @@
 #! /usr/bin/env python3
 import datetime
+import time
 import os
 from timeout import *
 
+pi_leds_available = True
+_pi_leds_import_error = None
+try:
+    import LED as pi_leds
+except ImportError as ex:
+    pi_leds_available = False
+    _pi_leds_import_error = ex
+
+DIGIT_TIMEOUT_LENGTH = 3
 PWORD_FILE = "password.txt"
 ACCESS_LOG_FILE = "access_log.csv"
 DEFAULT_PWORD = "1234"
@@ -10,9 +20,10 @@ IMMEDIATE_REJECT = False
 LOCKED_OUT_TIME = 60
 # if the following values are different, then the lock will only allow attempts
 # between the times
-TIME_LOCKOUT_BEGIN = datetime.time(13, 0)  # hour, minute
-TIME_LOCKOUT_END = datetime.time(14, 0)  # hour, minute
+TIME_LOCKOUT_BEGIN = datetime.time(0, 0)  # hour, minute
+TIME_LOCKOUT_END = datetime.time(0, 0)  # hour, minute
 MAX_ATTEMPTS = 5
+PRINT_MSGS = True
 
 
 class CodeLock:
@@ -21,9 +32,13 @@ class CodeLock:
         self.logger = logger  # store logger
         self.stdout = stdout  # store standard output
 
+        self.stdout.start_overwrite_output()
+
         # bind to digit recevied event
         self.iface.digit_received.bind(self.digit_received_handler)
-        self.digit_timeout = Timeout(3)  # the digit timeout
+        self._digit_timeout_time = None
+        self.digit_timeout = Timeout(0.1)  # the digit timeout
+        self.digit_timeout.elapsed.bind(self.digit_timeout_elapsed)
 
         self.password = []  # password store
         if os.path.isfile(PWORD_FILE):  # file exists, read and use
@@ -45,8 +60,17 @@ class CodeLock:
         # the locked out timeout (supposed to go from 59-0, but should output
         # each second)
         self.locked_timeout = Timeout(1)
+        self.locked_timeout.elapsed.bind(self.locked_timeout_elapsed)
         self.incorrect_attempts = 0  # the number of incorrect attempts
         self.locked_time_left = 0  # the amount of time left for the user to be locked out
+
+        if pi_leds_available:
+            pi_leds.setup_leds()
+        else:
+            self.logger.logw("unable to import LED lib, RPi LEDs will not be functional")
+            self.logger.loge(_pi_leds_import_error)
+
+        self.logger.log("code lock init complete")
 
     def access_log_append(self, event_name, success):
         self.access_log.write(
@@ -58,14 +82,19 @@ class CodeLock:
         """
         self.digit_timeout.reset()
         self.current_input = []
+        self.stdout.overwrite_text = ""
         self.access_log_append("code", correct)
         if correct:
+            if PRINT_MSGS:
+                print("Unlocked!")
             self.incorrect_attempts = 0
             self.iface.flash_green_led()
             self.logger.log("password correct, attempts reset and LED pulsed")
         else:
             if count_attempt:
                 self.incorrect_attempts += 1
+                if PRINT_MSGS:
+                    print("Incorrect, you have {} more tries left".format(MAX_ATTEMPTS - self.incorrect_attempts))
             self.iface.flash_red_led()
             if self.incorrect_attempts == MAX_ATTEMPTS:
                 self.lockout()
@@ -114,6 +143,7 @@ class CodeLock:
         _i = len(self.current_input)
         self.stdout.overwrite_text = ("*" * len(self.current_input)) + digit
         self.current_input.append(digit)
+        self._digit_timeout_time = time.time()
         self.digit_timeout.restart()
         if len(self.password) == len(self.current_input):
             for i in range(len(self.password)):
@@ -129,13 +159,22 @@ class CodeLock:
         """
         Handles the elapsed event of the digit timeout.
         """
-        self.password_entered(False, False)
-        self.stdout.overwrite_text = ""
+        now = time.time()
+        passed = now - self._digit_timeout_time
+        self.logger.logd("digit timeout: {} seconds have passed since last input", passed)
+        if pi_leds_available:
+            pi_leds.set_leds(max(0, min(passed / DIGIT_TIMEOUT_LENGTH, 1)))
+        if passed >= DIGIT_TIMEOUT_LENGTH:
+            self.password_entered(False, False)
+            self.stdout.overwrite_text = ""
+        else:
+            self.digit_timeout.restart()
 
     def cleanup(self):
         """
         Cleans up the class.
         """
+        self.stdout.end_overwrite_output()
         self.digit_timeout.cleanup()
         self.locked_timeout.cleanup()
         self.access_log_append("shutdown", None)

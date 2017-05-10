@@ -2,7 +2,7 @@
 import time
 import RPi.GPIO as gpio
 
-HARDWARE_WAIT = 0.010
+HARDWARE_WAIT = 0.005
 BOUNCE_SEARCH = 0.005
 
 

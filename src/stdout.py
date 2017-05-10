@@ -25,7 +25,8 @@ class StdoutOverwrite:
     def overwrite_text(self, value):
         assert isinstance(value, str)
         self._overwrite_text = value
-        self._dsp_overwrite_line()
+        if self._overwrite_enabled:
+            self._dsp_overwrite_line()
 
     def write(self, s):
         """

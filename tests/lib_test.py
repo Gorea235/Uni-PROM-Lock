@@ -35,6 +35,12 @@ class Stdout_Test:
     def overwrite_line(self, value):
         self._overwrite_line = value
 
+    def start_overwrite_output(self):
+        pass
+
+    def end_overwrite_output(self):
+        pass
+
 
 class Logger_Test(logger.Logger):
     def __init__(self):

@@ -224,7 +224,7 @@ set grid
 set term jpg
 set output 'access_times_graph.jpg'
 set datefile separator ","
-plot '{}' using 0:1
+plot '{}'
 EOF""".format(GNUPLOT_FILE))
         except Exception as ex:
             self.logger.loge(

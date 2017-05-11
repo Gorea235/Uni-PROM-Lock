@@ -3,6 +3,7 @@ import datetime
 import time
 import os
 from timeout import *
+import subprocess
 
 pi_leds_available = True
 _pi_leds_import_error = None
@@ -15,6 +16,7 @@ except ImportError as ex:
 DIGIT_TIMEOUT_LENGTH = 3
 PWORD_FILE = "password.txt"
 ACCESS_LOG_FILE = "access_log.csv"
+GNUPLOT_FILE = "gnuplot_data.csv"
 DEFAULT_PWORD = "1234"
 IMMEDIATE_REJECT = False
 TIME_LOCKOUT_BEGIN = datetime.time(0, 0)  # hour, minute
@@ -206,3 +208,24 @@ class CodeLock:
         self.cover_digit_timeout.cleanup()
         self.access_log_append("shutdown", None)
         self.access_log.close()
+        data = []
+        with open(ACCESS_LOG_FILE) as f:
+            for l in f:
+                spl = l.strip().split(",")
+                data.append("{},{}".format(spl[1], spl[2]))
+        with open(GNUPLOT_FILE, "w") as f:
+            f.writelines(data)
+        try:
+            subprocess.call("""gnuplot<<EOF
+set title 'Access Times'
+set ylabel 'Pass/Fail'
+set xlabel 'Time'
+set grid
+set term jpg
+set output 'access_times_graph.jpg'
+set datefile separator ","
+plot '{}' using 0:1
+EOF""".format(GNUPLOT_FILE))
+        except Exception as ex:
+            self.logger.loge(
+                ex, "An error occured while attempting to run GnuPlot")

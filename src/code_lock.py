@@ -18,10 +18,10 @@ PWORD_FILE = "password.txt"
 ACCESS_LOG_FILE = "access_log.csv"
 GNUPLOT_FILE = "gnuplot_data.csv"
 DEFAULT_PWORD = "1234"
-IMMEDIATE_REJECT = False
+IMMEDIATE_REJECT = True
 TIME_LOCKOUT_BEGIN = datetime.time(0, 0)  # hour, minute
 TIME_LOCKOUT_END = datetime.time(0, 0)  # hour, minute
-USE_MAX_ATTEMPTS = True
+USE_MAX_ATTEMPTS = False
 LOCKED_OUT_TIME = 60
 MAX_ATTEMPTS = 5
 PRINT_MSGS = True
@@ -92,11 +92,13 @@ class CodeLock:
         self.digit_timeout.reset()
         self.ignore_digits = True
         self.current_input = []
+        if pi_leds_available:
+            pi_leds.set_leds(0)
         self.access_log_append("code", correct)
         if correct:
             if PRINT_MSGS:
                 print("Unlocked!")
-            self.correct_clear_timeout.start()
+            self.correct_clear_timeout.restart()
             self.incorrect_attempts = 0
             self.iface.flash_green_led()
             self.logger.log("password correct, attempts reset and LED pulsed")
@@ -106,7 +108,9 @@ class CodeLock:
                 if PRINT_MSGS:
                     print("Incorrect, you have {} more tries left".format(
                         MAX_ATTEMPTS - self.incorrect_attempts))
-            self.incorrect_clear_timeout.start()
+            elif count_attempt and not USE_MAX_ATTEMPTS and PRINT_MSGS:
+                print("Incorrect!")
+            self.incorrect_clear_timeout.restart()
             self.iface.flash_red_led()
             if self.incorrect_attempts == MAX_ATTEMPTS:
                 self.lockout()
@@ -134,6 +138,7 @@ class CodeLock:
             self.locked_time_left)
         if self.locked_time_left <= 0:
             self.locked_out = False
+            self.overwrite_text = ""
             self.logger.log("locked timeout finished, disabling")
         else:
             self.locked_timeout.start()
@@ -209,23 +214,27 @@ class CodeLock:
         self.access_log_append("shutdown", None)
         self.access_log.close()
         data = []
-        with open(ACCESS_LOG_FILE) as f:
-            for l in f:
-                spl = l.strip().split(",")
-                data.append("{},{}".format(spl[1], spl[2]))
-        with open(GNUPLOT_FILE, "w") as f:
-            f.writelines(data)
         try:
-            subprocess.call("""gnuplot<<EOF
-set title 'Access Times'
-set ylabel 'Pass/Fail'
-set xlabel 'Time'
-set grid
-set term jpg
-set output 'access_times_graph.jpg'
-set datefile separator ","
-plot '{}'
-EOF""".format(GNUPLOT_FILE))
+            with open(ACCESS_LOG_FILE) as f:
+                for l in f:
+                    spl = l.strip().split(",")
+                    if spl[0] == "startup":
+                        data.clear()
+                    elif spl[0] == "code":
+                        ts = spl[1].split("T")[1].split(":")
+                        s = (int(ts[0]) * 3600) + (int(ts[1]) * 60) + int(ts[2])
+                        data.append("{}\t{}".format(s, int(eval(spl[2]))))
+            with open(GNUPLOT_FILE, "w") as f:
+                f.write("\n".join(data))
+            try:
+                subprocess.call(["./gnuplot.sh"])
+            except Exception as ex:
+                if PRINT_MSGS:
+                    import traceback
+                    traceback.print_exc()
+##                self.logger.loge(
+##                    ex, "An error occured while attempting to run GnuPlot")
         except Exception as ex:
-            self.logger.loge(
-                ex, "An error occured while attempting to run GnuPlot")
+            if PRINT_MSGS:
+                import traceback
+                traceback.print_exc()

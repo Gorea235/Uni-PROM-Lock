@@ -9,6 +9,7 @@ import time
 
 code_lock.PRINT_MSGS = False
 code_lock.IMMEDIATE_REJECT = False
+code_lock.USE_MAX_ATTEMPTS = True
 
 
 class CodeLockTest(unittest.TestCase):

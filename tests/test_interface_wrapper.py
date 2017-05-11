@@ -174,17 +174,26 @@ class InterfaceWrapperTest(unittest.TestCase):
         self.iface.flash_green_led()
         self.iface._do_write_phase()
         self.assertEqual(self.get_digit_output(), [True, False, False])
-        self.assertFalse(self.iface._led_green_apply)
+        self.assertEqual(self.iface._led_green_apply, 1)
+        self.iface._do_write_phase()
+        self.assertEqual(self.get_digit_output(), [True, False, False])
+        self.assertEqual(self.iface._led_green_apply, 0)
 
         self.iface.flash_red_led()
         self.iface._do_write_phase()
         self.assertEqual(self.get_digit_output(), [True, False, True])
-        self.assertFalse(self.iface._led_red_apply)
+        self.assertEqual(self.iface._led_red_apply, 1)
+        self.iface._do_write_phase()
+        self.assertEqual(self.get_digit_output(), [True, False, True])
+        self.assertEqual(self.iface._led_red_apply, 0)
 
         self.iface.beep_buzzer()
         self.iface._do_write_phase()
         self.assertEqual(self.get_digit_output(), [True, True, False])
-        self.assertFalse(self.iface._buzzer_apply)
+        self.assertEqual(self.iface._buzzer_apply, 1)
+        self.iface._do_write_phase()
+        self.assertEqual(self.get_digit_output(), [True, True, False])
+        self.assertEqual(self.iface._buzzer_apply, 0)
 
     def test_cleanup(self):
         self.iface.cleanup()
@@ -192,12 +201,12 @@ class InterfaceWrapperTest(unittest.TestCase):
 
     def test_flash_green_led(self):
         self.iface.flash_green_led()
-        self.assertTrue(self.iface._led_green_apply)
+        self.assertEqual(self.iface._led_green_apply, 2)
 
     def test_flash_red_led(self):
         self.iface.flash_red_led()
-        self.assertTrue(self.iface._led_red_apply)
+        self.assertEqual(self.iface._led_red_apply, 2)
 
     def test_beep_buzzer(self):
         self.iface.beep_buzzer()
-        self.assertTrue(self.iface._buzzer_apply)
+        self.assertEqual(self.iface._buzzer_apply, 2)

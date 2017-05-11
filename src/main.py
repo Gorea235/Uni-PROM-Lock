@@ -1,9 +1,11 @@
 #! /usr/bin/env python3
 from code_lock import CodeLock
-from event import Event
+from event import *
 from interface_wrapper import InterfaceWrapper
 from logger import *
 from stdout import StdoutOverwrite
+
+import traceback
 
 LOG_FILE = "events.log"
 
@@ -23,7 +25,13 @@ class App:
 
         self.iface.main_loop()  # this cannot except unless logger causes an issue
 
-        self._cleanup_event.fire()
+        try:
+            self._cleanup_event.fire()
+        except EventException as ex:
+            traceback.format_exc()
+            print(ex)
+            for e in ex._exc:
+                print(e)
 
     def wrap(self, *args):
         for c in args:

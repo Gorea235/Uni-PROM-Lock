@@ -107,9 +107,9 @@ class InterfaceWrapper:
         self._done_line_write = False
         # the follow store the value to apply to the given output on the next
         # pass
-        self._led_green_apply = False
-        self._led_red_apply = False
-        self._buzzer_apply = False
+        self._led_green_apply = 0
+        self._led_red_apply = 0
+        self._buzzer_apply = 0
 
         self.logger.log("interface wrapper init complete")
 
@@ -184,15 +184,15 @@ class InterfaceWrapper:
         self._done_line_write = False
         if self._led_green_apply:
             low_line = DPOS_GREEN_LED
-            self._led_green_apply = False
+            self._led_green_apply -= 1
             self.logger.logt("low line set to green LED")
         elif self._led_red_apply:
             low_line = DPOS_RED_LED
-            self._led_red_apply = False
+            self._led_red_apply -= 1
             self.logger.logt("low line set to red LED")
         elif self._buzzer_apply:
             low_line = DPOS_BUZZER
-            self._buzzer_apply = False
+            self._buzzer_apply -= 1
             self.logger.logt("low line set to buzzer")
         else:  # apply keypad input
             low_line = DPOS_DIGIT[self._current_digit]
@@ -218,19 +218,19 @@ class InterfaceWrapper:
         """
         Causes the green LED to flash once (if mid-flash, it will either do nothing or just reset the duration left on the flash, depending on how the hardware works).
         """
-        self._led_green_apply = True
+        self._led_green_apply = 2
         self.logger.log("green LED set to flash on next pass")
 
     def flash_red_led(self):
         """
         Causes the red LED to flash once (if mid-flash, it will either do nothing or just reset the duration left on the flash, depending on how the hardware works).
         """
-        self._led_red_apply = True
+        self._led_red_apply = 2
         self.logger.log("red LED set to flash on next pass")
 
     def beep_buzzer(self):
         """
         Causes the buzzer to go off once (if it is already buzzing, it will either do nothing or just reset the duration left on the buzz, depending on how the hardware works).
         """
-        self._buzzer_apply = True
+        self._buzzer_apply = 2
         self.logger.log("buzzer set to activate on next pass")

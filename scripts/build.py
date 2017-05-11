@@ -10,7 +10,7 @@ import tests
 result = tests.test_source()
 if not result.wasSuccessful():
     print("tests failed, aborting build")
-    exit()
+    exit(1)
 
 _TOP = ".."
 SRC = os.path.join(_TOP, "src")

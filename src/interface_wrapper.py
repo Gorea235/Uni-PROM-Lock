@@ -8,8 +8,8 @@ GPIO_S_HIGH = "1"
 GPIO_S_LOW = "0"
 
 # GPIO lines
-LINE_REG_CLK = 14
-LINE_IO_SWTICH = 15
+LINE_REG_CLK = 17
+LINE_IO_SWTICH = 18
 LINE_DATA_0 = 11
 LINE_DATA_1 = 9
 LINE_DATA_2 = 10
@@ -205,6 +205,7 @@ class InterfaceWrapper:
         self.gpio.d_set_states([bool(int(d)) for d in reversed(bin_out)])
         self.gpio.reg.high()
         self.gpio.reg.low()
+        self.gpio.d_set_states([True, True, True])
         self.logger.logt("pulsed register line")
 
     def cleanup(self):

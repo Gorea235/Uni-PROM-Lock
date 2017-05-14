@@ -28,12 +28,14 @@ PRINT_MSGS = True
 
 
 class CodeLock:
-    def __init__(self, iface, logger, stdout):
+    def __init__(self, iface, logger, stdout, DEMO_MODE=False):
+        self.DEMO_MODE = DEMO_MODE
         self.iface = iface  # store interface wrapper
         self.logger = logger  # store logger
         self.stdout = stdout  # store standard output
 
-        self.stdout.start_overwrite_output()
+        if not self.DEMO_MODE:
+            self.stdout.start_overwrite_output()
 
         # bind to digit recevied event
         self.iface.digit_received.bind(self.digit_received_handler)
@@ -205,7 +207,8 @@ class CodeLock:
         """
         Cleans up the class.
         """
-        self.stdout.end_overwrite_output()
+        if not self.DEMO_MODE:
+            self.stdout.end_overwrite_output()
         self.digit_timeout.cleanup()
         self.locked_timeout.cleanup()
         self.correct_clear_timeout.cleanup()
@@ -222,7 +225,8 @@ class CodeLock:
                         data.clear()
                     elif spl[0] == "code":
                         ts = spl[1].split("T")[1].split(":")
-                        s = (int(ts[0]) * 3600) + (int(ts[1]) * 60) + int(ts[2])
+                        s = (int(ts[0]) * 3600) + \
+                            (int(ts[1]) * 60) + int(ts[2])
                         data.append("{}\t{}".format(s, int(eval(spl[2]))))
             with open(GNUPLOT_FILE, "w") as f:
                 f.write("\n".join(data))
@@ -232,8 +236,8 @@ class CodeLock:
                 if PRINT_MSGS:
                     import traceback
                     traceback.print_exc()
-##                self.logger.loge(
-##                    ex, "An error occured while attempting to run GnuPlot")
+# self.logger.loge(
+# ex, "An error occured while attempting to run GnuPlot")
         except Exception as ex:
             if PRINT_MSGS:
                 import traceback

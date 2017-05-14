@@ -21,7 +21,7 @@ DPOS_GREEN_LED = 4
 DPOS_RED_LED = 5
 DPOS_BUZZER = 6
 # == # Unused digit position = 7
- 
+
 DPOS_MAX = 7
 
 # Digit conversion matrix
@@ -92,7 +92,8 @@ class InterfaceWrapper:
     The main class used by the startup to handle the interfacing.
     """
 
-    def __init__(self, logger):
+    def __init__(self, logger, DEMO_MODE=False):
+        self.DEMO_MODE = DEMO_MODE
         gpio.setwarnings(False)
         gpio.setmode(gpio.BCM)
         self.logger = logger
@@ -121,9 +122,13 @@ class InterfaceWrapper:
         try:
             while self._run_loop:
                 # write phase
+                if self.DEMO_MODE:
+                    input("> do write phase <")
                 self._start_write()
                 self._do_write_phase()
                 # read phase
+                if self.DEMO_MODE:
+                    input("> do read phase <")
                 self._start_read()
                 self._do_read_phase()
         except Exception as ex:
@@ -148,13 +153,15 @@ class InterfaceWrapper:
 
     def _do_read_phase(self):
         if not self._done_line_write:
-            self.logger.logt("skipped reading rows due to previous write not being to column")
+            self.logger.logt(
+                "skipped reading rows due to previous write not being to column")
             return
         if self._digit_down:
             if self.gpio.d_all_high():
                 self._digit_down = False
                 self._inc_current_digit()
-                self.logger.logt("digit no longer pressed, waiting for next input")
+                self.logger.logt(
+                    "digit no longer pressed, waiting for next input")
             else:
                 self.logger.logt("digit still pressed")
         else:

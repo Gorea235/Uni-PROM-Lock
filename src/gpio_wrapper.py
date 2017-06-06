@@ -13,10 +13,14 @@ class GpioWrapper:
         self.input()
 
     @staticmethod
+    def wait():
+        time.sleep(HARDWARE_WAIT)
+
+    @staticmethod
     def set_multiple_output(*args):
         for t in args:
             t[0]._apply_output(t[1])
-        time.sleep(HARDWARE_WAIT)
+        GpioWrapper.wait()
 
     def set_io(self, state):
         gpio.setup(self._pin, state)
@@ -29,7 +33,7 @@ class GpioWrapper:
 
     def set_output(self, value):
         self._apply_output(value)
-        time.sleep(HARDWARE_WAIT)
+        GpioWrapper.wait()
 
     def _apply_output(self, value):
         assert isinstance(value, bool)

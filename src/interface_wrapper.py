@@ -20,9 +20,18 @@ DPOS_NDIGITS = len(DPOS_DIGIT)
 DPOS_GREEN_LED = 4
 DPOS_RED_LED = 5
 DPOS_BUZZER = 6
-# == # Unused digit position = 7
+DPOS_UNUSED = 7  # Unused digit position = 7
 
-DPOS_MAX = 7
+DPOS_CONVERT = {  # 8-bit ad-hoc conversion
+    0: [False, False, False],
+    1: [True, False, False],
+    2: [False, True, False],
+    3: [True, True, False],
+    4: [False, False, True],
+    5: [True, False, True],
+    6: [False, True, True],
+    7: [True, True, True]
+}
 
 # Digit conversion matrix
 # Works with [row][column]
@@ -208,9 +217,10 @@ class InterfaceWrapper:
                 self._inc_current_digit()
             self._done_line_write = True
             self.logger.logt("low line set to next keypad row")
-        bin_out = bin(low_line)[2:].zfill(3)
-        self.logger.logt("gpio states: {}", bin_out)
-        self.gpio.d_set_states([bool(int(d)) for d in reversed(bin_out)])
+        # bin_out = bin(low_line)[2:].zfill(3)
+        # self.logger.logt("gpio states: {}", bin_out)
+        # self.gpio.d_set_states([bool(int(d)) for d in reversed(bin_out)])
+        self.gpio.d_set_states(DPOS_CONVERT[low_line])
         self.gpio.reg.high()
         self.gpio.reg.low()
         #self.gpio.d_set_states([True, True, True])

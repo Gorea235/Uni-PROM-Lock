@@ -10,9 +10,9 @@ GPIO_S_LOW = "0"
 # GPIO lines
 LINE_REG_CLK = 14
 LINE_IO_SWTICH = 15
-LINE_DATA_0 = 11
+LINE_DATA_0 = 10
 LINE_DATA_1 = 9
-LINE_DATA_2 = 10
+LINE_DATA_2 = 11
 
 # 8-Bit ad-hoc digits
 DPOS_DIGIT = [0, 1, 2, 3]

@@ -152,7 +152,7 @@ class CodeLock:
         self.ignore_digits = False
 
     def cover_digit_timeout_elapsed(self):
-        self.overwrite_text = "*" * len(self.current_input)
+        self.stdout.overwrite_text = "*" * len(self.current_input)
 
     def digit_received_handler(self, digit):
         """

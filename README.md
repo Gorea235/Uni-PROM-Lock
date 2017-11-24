@@ -12,6 +12,10 @@ Since all of the input, and most of the output, is done through hardware, I wrot
 
 Outputting rows is done through a 3-bit data line, that feeds into an 8-bit IO expander, that outputs a single low line in a set of 8 depending on the input. This output system also drives the buzzer and LEDs, which use monostable multivibrators to convert the few-millisecond signal to a 1 or 3 second one. The data lines are put through a flip-flop chip so that the value can be preserved while reading, since input and output are done through the same data-lines. Because of this, the input data is put through a 3-state logic chip before reaching the main data lines, since this allows us to disable the input data being written to the data lines while we are attempting to write out.
 
+On exit, the system will write all of the attempts to a CSV file, which is then loaded by Gnuplot, which writes the result to an image. This image will show all of the attempts that were made during that run in a graph of time verses success. The time is shown as an integer (in order to work with Gnuplot properly), and success is shown as 0 for failed attempt, and 1 for successful attempt.
+
+I use the Event lib that I wrote for managing an event-based system. This class simulates C#-like events relatively closely, making it nice to work with thanks to a simple bind-unbind system.
+
 # Building and Testing
 In order to ensure correctness and iterate quickly, I wrote a build script that runs the unit testing, and then copies the items in the lib and src folders to a build folder if all the tests ran correctly. After that, we could use another script I wrote to push the build folder to the Pi, ready for us to run it. By doing this, we could make a change, and then check it against the tests and push it ready for full system testing, with the execution of 1 or 2 scripts.
 
